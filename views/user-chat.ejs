@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= appName %> - Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #9333ea;
+      --secondary-color: #7c3aed;
+      --accent-color: #e91e63;
+    }
+    body {
+      background: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Announcement Bar */
+    .announcement-bar {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      color: white;
+      padding: 0.5rem 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .announcement-bar a {
+      color: white;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .announcement-bar .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+    /* Top Navbar */
+    .top-navbar {
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 0.75rem 0;
+    }
+    .navbar-brand {
+      font-weight: 700;
+      color: var(--primary-color) !important;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .navbar-brand i {
+      color: var(--accent-color);
+    }
+    .nav-link {
+      color: #555 !important;
+      font-weight: 500;
+      padding: 0.5rem 1rem !important;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: var(--primary-color) !important;
+      background: rgba(147, 51, 234, 0.1);
+    }
+    .user-menu-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 25px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      color: white;
+      border: none;
+      font-weight: 500;
+    }
+    .user-menu-btn:hover {
+      opacity: 0.9;
+      color: white;
+    }
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+    }
+    .chat-wrapper {
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Chat Card */
+    .chat-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-header h5 {
+      margin: 0;
+      font-weight: 600;
+    }
+    .chat-body {
+      background: #f8f9fa;
+      padding: 1rem;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 300px;
+      max-height: 45vh;
+    }
+    .chat-footer {
+      background: white;
+      padding: 1rem;
+      border-top: 1px solid #eee;
+    }
+    /* Messages */
+    .message {
+      margin-bottom: 1rem;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message.user {
+      margin-left: auto;
+    }
+    .message.assistant {
+      margin-right: auto;
+    }
+    .message-bubble {
+      padding: 0.75rem 1rem;
+      border-radius: 18px;
+      position: relative;
+    }
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .message.assistant .message-bubble {
+      background: white;
+      color: #333;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .message-sender {
+      font-size: 0.75rem;
+      color: #6c757d;
+      margin-bottom: 0.25rem;
+    }
+    .message.user .message-sender {
+      text-align: right;
+    }
+    /* Typing Indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 0.5rem 1rem;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    /* Voice Controls */
+    .voice-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-top: 1px solid #eee;
+    }
+    .voice-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .voice-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .connect-btn {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      color: white;
+      width: 80px;
+      height: 80px;
+      font-size: 2rem;
+    }
+    .connect-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 4px 20px rgba(147, 51, 234, 0.4);
+    }
+    .connect-btn.connected {
+      background: #dc3545;
+    }
+    .connect-btn.connecting {
+      background: #ffc107;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .mute-btn {
+      background: #6c757d;
+      color: white;
+    }
+    .mute-btn.muted {
+      background: #dc3545;
+    }
+    .mute-btn:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    .disconnect-btn {
+      background: #dc3545;
+      color: white;
+    }
+    .disconnect-btn:hover:not(:disabled) {
+      background: #bb2d3b;
+      transform: scale(1.05);
+    }
+    .speaker-btn {
+      background: #6c757d;
+      color: white;
+    }
+    .speaker-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+    .speaker-btn.muted {
+      background: #dc3545;
+    }
+    .voice-status {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-top: 0.5rem;
+    }
+    .voice-status.connected {
+      color: #198754;
+    }
+    .voice-status.error {
+      color: #dc3545;
+    }
+    /* Audio Visualizer */
+    .audio-visualizer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 30px;
+      margin-top: 0.5rem;
+    }
+    .audio-bar {
+      width: 4px;
+      background: var(--primary-color);
+      border-radius: 2px;
+      transition: height 0.1s ease;
+    }
+    .audio-visualizer.speaking .audio-bar {
+      animation: audioWave 0.5s ease infinite;
+    }
+    .audio-bar:nth-child(1) { animation-delay: 0s; }
+    .audio-bar:nth-child(2) { animation-delay: 0.1s; }
+    .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+    .audio-bar:nth-child(4) { animation-delay: 0.3s; }
+    .audio-bar:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes audioWave {
+      0%, 100% { height: 8px; }
+      50% { height: 25px; }
+    }
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      padding: 0.75rem 1rem;
+      background: white;
+      border-top: 1px solid #eee;
+      justify-content: center;
+    }
+    .quick-action-btn {
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    .status-badge.online {
+      background: rgba(34, 197, 94, 0.3);
+    }
+    /* Welcome Message */
+    .welcome-container {
+      text-align: center;
+      padding: 2rem;
+    }
+    .welcome-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2rem;
+      color: white;
+    }
+    /* Assistant Avatar */
+    .assistant-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    /* Footer */
+    .page-footer {
+      background: white;
+      border-top: 1px solid #eee;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+    /* Text Input Area */
+    .text-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: white;
+      border-top: 1px solid #eee;
+    }
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: #f8f9fa;
+    }
+    .mode-toggle .btn {
+      border-radius: 20px;
+      padding: 0.5rem 1.5rem;
+    }
+    .mode-toggle .btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+  <!-- Announcement Bar -->
+  <% if (typeof features !== 'undefined' && features && features.stickyBarEnabled) { %>
+  <div class="announcement-bar" id="announcementBar">
+    <div class="container d-flex justify-content-center align-items-center gap-3">
+      <span>
+        <i class="bi bi-megaphone-fill me-2"></i>
+        <%= features.stickyBarText || "Don't forget - Valentine's Day is coming up! Check the wishlist!" %>
+        <% if (features.stickyBarLink) { %>
+          <a href="<%= features.stickyBarLink %>"><%= features.stickyBarLinkText || 'Learn More' %></a>
+        <% } %>
+      </span>
+      <button type="button" class="btn-close btn-close-white btn-sm" onclick="document.getElementById('announcementBar').style.display='none'"></button>
+    </div>
+  </div>
+  <% } else { %>
+  <div class="announcement-bar" id="announcementBar">
+    <div class="container d-flex justify-content-center align-items-center gap-3">
+      <span>
+        <i class="bi bi-heart-fill me-2"></i>
+        Remember: Happy Wife, Happy Life! Check your important dates and chores regularly.
+      </span>
+      <button type="button" class="btn-close btn-close-white btn-sm" onclick="document.getElementById('announcementBar').style.display='none'"></button>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Top Navigation Bar -->
+  <nav class="top-navbar">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <!-- Brand -->
+        <a class="navbar-brand" href="<%= basePath %>/">
+          <i class="bi bi-heart-fill"></i>
+          <%= appName %>
+        </a>
+
+        <!-- Navigation Links -->
+        <ul class="nav d-none d-md-flex">
+          <li class="nav-item">
+            <a class="nav-link active" href="<%= basePath %>/chat?token=<%= token %>">
+              <i class="bi bi-chat-heart me-1"></i> Chat
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="<%= basePath %>/admin/important-dates?token=<%= token %>">
+              <i class="bi bi-calendar-heart me-1"></i> Dates
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="<%= basePath %>/admin/wishlist?token=<%= token %>">
+              <i class="bi bi-gift me-1"></i> Wishlist
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="<%= basePath %>/admin/chores?token=<%= token %>">
+              <i class="bi bi-list-check me-1"></i> Chores
+            </a>
+          </li>
+        </ul>
+
+        <!-- User Menu -->
+        <div class="dropdown">
+          <button class="user-menu-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-sm-inline"><%= user.name || 'User' %></span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <span class="dropdown-item-text">
+                <small class="text-muted">Signed in as</small><br>
+                <strong><%= user.email || user.name %></strong>
+              </span>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="<%= basePath %>/account?token=<%= token %>">
+                <i class="bi bi-person-gear me-2"></i>Account
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="<%= basePath %>/admin/dashboard?token=<%= token %>">
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="<%= basePath %>/admin/settings?token=<%= token %>">
+                <i class="bi bi-gear me-2"></i>Settings
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="<%= basePath %>/auth/login" onclick="localStorage.clear()">
+                <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="chat-wrapper">
+      <!-- Chat Card -->
+      <div class="chat-card">
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div class="d-flex align-items-center gap-3">
+            <div class="assistant-avatar">
+              <i class="bi bi-heart-fill"></i>
+            </div>
+            <div>
+              <h5>Chat with Wife AI</h5>
+              <span class="status-badge" id="statusBadge">
+                <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
+                <span id="statusText">Disconnected</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Body -->
+        <div class="chat-body" id="chatBody">
+          <!-- Welcome message -->
+          <div class="welcome-container" id="welcomeMessage">
+            <div class="welcome-avatar">
+              <i class="bi bi-heart-fill"></i>
+            </div>
+            <h4>Welcome, <%= user.name || 'Honey' %>!</h4>
+            <p class="text-muted mb-0">Click <strong>Connect</strong> to start a voice conversation,<br>or type a message below.</p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <button class="btn btn-outline-primary quick-action-btn" onclick="sendQuickMessage('What important dates are coming up?')" data-bs-toggle="tooltip" data-bs-placement="top" title="Check upcoming birthdays, anniversaries, and events">
+            <i class="bi bi-calendar-heart me-1"></i> Upcoming Dates
+          </button>
+          <button class="btn btn-outline-success quick-action-btn" onclick="sendQuickMessage('What chores do I need to do?')" data-bs-toggle="tooltip" data-bs-placement="top" title="View your honey-do list and pending tasks">
+            <i class="bi bi-list-check me-1"></i> My Chores
+          </button>
+          <button class="btn btn-outline-warning quick-action-btn" onclick="sendQuickMessage('Show me the wishlist')" data-bs-toggle="tooltip" data-bs-placement="top" title="See gift ideas and preferences">
+            <i class="bi bi-gift me-1"></i> Wishlist
+          </button>
+          <button class="btn btn-outline-danger quick-action-btn" onclick="sendQuickMessage('Any reminders for me?')" data-bs-toggle="tooltip" data-bs-placement="top" title="Get important reminders and notifications">
+            <i class="bi bi-bell me-1"></i> Reminders
+          </button>
+        </div>
+
+        <!-- Voice Controls -->
+        <div class="voice-controls">
+          <button class="voice-btn mute-btn" id="muteBtn" onclick="toggleMute()" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Mute/Unmute Microphone">
+            <i class="bi bi-mic-fill" id="muteIcon"></i>
+          </button>
+          <button class="voice-btn connect-btn" id="connectBtn" onclick="connect()" data-bs-toggle="tooltip" data-bs-placement="top" title="Start Voice Chat">
+            <i class="bi bi-telephone-fill" id="connectIcon"></i>
+          </button>
+          <button class="voice-btn disconnect-btn" id="disconnectBtn" onclick="disconnect()" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="End Voice Chat">
+            <i class="bi bi-telephone-x-fill"></i>
+          </button>
+          <button class="voice-btn speaker-btn" id="speakerBtn" onclick="toggleSpeaker()" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle Speaker On/Off">
+            <i class="bi bi-volume-up-fill" id="speakerIcon"></i>
+          </button>
+        </div>
+        <div class="voice-status" id="voiceStatus">Click Connect to start voice chat</div>
+        <div class="audio-visualizer" id="audioVisualizer">
+          <div class="audio-bar" style="height: 8px;"></div>
+          <div class="audio-bar" style="height: 8px;"></div>
+          <div class="audio-bar" style="height: 8px;"></div>
+          <div class="audio-bar" style="height: 8px;"></div>
+          <div class="audio-bar" style="height: 8px;"></div>
+        </div>
+
+        <!-- Text Input -->
+        <div class="text-input-area">
+          <input type="text" class="form-control" id="messageInput" placeholder="Type a message..." autocomplete="off">
+          <button class="btn btn-primary px-4" id="sendBtn" onclick="sendTextMessage()" data-bs-toggle="tooltip" data-bs-placement="top" title="Send Message">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <div class="container">
+      <i class="bi bi-heart-fill text-danger"></i> <%= appName %> &mdash; Happy Wife, Happy Life
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const token = '<%= token %>';
+    const userName = '<%= user.name || "Honey" %>';
+
+    // DOM Elements
+    const chatBody = document.getElementById('chatBody');
+    const messageInput = document.getElementById('messageInput');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const connectBtn = document.getElementById('connectBtn');
+    const connectIcon = document.getElementById('connectIcon');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const muteIcon = document.getElementById('muteIcon');
+    const speakerBtn = document.getElementById('speakerBtn');
+    const speakerIcon = document.getElementById('speakerIcon');
+    const audioVisualizer = document.getElementById('audioVisualizer');
+
+    // State
+    let isConnected = false;
+    let isConnecting = false;
+    let isMuted = false;
+    let isSpeakerOff = false;
+    let messages = [];
+    let ws = null;
+    let audioContext = null;
+    let mediaStream = null;
+
+    // Update status display
+    function updateStatus(status, text, statusClass = '') {
+      statusText.textContent = text;
+      voiceStatus.textContent = text;
+      voiceStatus.className = 'voice-status ' + statusClass;
+
+      if (status === 'connected') {
+        statusBadge.className = 'status-badge online';
+      } else {
+        statusBadge.className = 'status-badge';
+      }
+    }
+
+    // Toggle voice connection
+    async function toggleConnection() {
+      if (isConnecting) return;
+
+      if (isConnected) {
+        disconnect();
+      } else {
+        await connect();
+      }
+    }
+
+    // Connect to voice chat
+    async function connect() {
+      isConnecting = true;
+      connectBtn.classList.add('connecting');
+      connectIcon.className = 'bi bi-hourglass-split';
+      updateStatus('connecting', 'Connecting...', '');
+
+      try {
+        // Request microphone permission
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // Initialize audio context
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Connect to WebSocket (placeholder - connect to actual server)
+        // ws = new WebSocket(`wss://your-server/ws?token=${token}`);
+
+        // Simulate connection for demo
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        isConnected = true;
+        isConnecting = false;
+        connectBtn.classList.remove('connecting');
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+        muteBtn.disabled = false;
+        speakerBtn.disabled = false;
+        updateStatus('connected', 'Connected - Listening...', 'connected');
+
+        // Show speaking animation
+        audioVisualizer.classList.add('speaking');
+
+        // Add system message
+        addMessage("I'm listening, honey. What do you need?", 'assistant');
+
+      } catch (error) {
+        console.error('Connection error:', error);
+        isConnecting = false;
+        connectBtn.classList.remove('connecting');
+        connectBtn.disabled = false;
+        connectIcon.className = 'bi bi-telephone-fill';
+
+        if (error.name === 'NotAllowedError') {
+          updateStatus('error', 'Microphone access denied. Please allow microphone access.', 'error');
+        } else {
+          updateStatus('error', 'Connection failed. Please try again.', 'error');
+        }
+      }
+    }
+
+    // Disconnect from voice chat
+    function disconnect() {
+      isConnected = false;
+
+      // Stop media stream
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+
+      // Close WebSocket
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+
+      // Close audio context
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+
+      connectBtn.classList.remove('connecting');
+      connectBtn.disabled = false;
+      disconnectBtn.disabled = true;
+      muteBtn.disabled = true;
+      speakerBtn.disabled = true;
+      isMuted = false;
+      isSpeakerOff = false;
+      muteBtn.classList.remove('muted');
+      speakerBtn.classList.remove('muted');
+      muteIcon.className = 'bi bi-mic-fill';
+      speakerIcon.className = 'bi bi-volume-up-fill';
+      audioVisualizer.classList.remove('speaking');
+      updateStatus('disconnected', 'Disconnected', '');
+
+      addMessage("Talk to you later, honey!", 'assistant');
+    }
+
+    // Toggle microphone mute
+    function toggleMute() {
+      if (!isConnected) return;
+
+      isMuted = !isMuted;
+
+      if (mediaStream) {
+        mediaStream.getAudioTracks().forEach(track => {
+          track.enabled = !isMuted;
+        });
+      }
+
+      if (isMuted) {
+        muteBtn.classList.add('muted');
+        muteIcon.className = 'bi bi-mic-mute-fill';
+        updateStatus('connected', 'Microphone muted', 'connected');
+      } else {
+        muteBtn.classList.remove('muted');
+        muteIcon.className = 'bi bi-mic-fill';
+        updateStatus('connected', 'Connected - Listening...', 'connected');
+      }
+    }
+
+    // Toggle speaker
+    function toggleSpeaker() {
+      if (!isConnected) return;
+
+      isSpeakerOff = !isSpeakerOff;
+
+      if (isSpeakerOff) {
+        speakerBtn.classList.add('muted');
+        speakerIcon.className = 'bi bi-volume-mute-fill';
+      } else {
+        speakerBtn.classList.remove('muted');
+        speakerIcon.className = 'bi bi-volume-up-fill';
+      }
+    }
+
+    // Add message to chat
+    function addMessage(text, role, animate = true) {
+      if (welcomeMessage && welcomeMessage.style.display !== 'none') {
+        welcomeMessage.style.display = 'none';
+      }
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message ' + role;
+
+      const senderDiv = document.createElement('div');
+      senderDiv.className = 'message-sender';
+      senderDiv.textContent = role === 'user' ? 'You' : 'Wife AI';
+
+      const bubbleDiv = document.createElement('div');
+      bubbleDiv.className = 'message-bubble';
+      bubbleDiv.textContent = text;
+
+      messageDiv.appendChild(senderDiv);
+      messageDiv.appendChild(bubbleDiv);
+
+      if (!animate) {
+        messageDiv.style.animation = 'none';
+      }
+
+      chatBody.appendChild(messageDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      messages.push({ role, content: text });
+    }
+
+    // Send text message
+    async function sendTextMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      addMessage(text, 'user');
+      messageInput.value = '';
+
+      // Get AI response
+      const response = await getAIResponse(text);
+      addMessage(response, 'assistant');
+    }
+
+    // Quick message
+    function sendQuickMessage(text) {
+      messageInput.value = text;
+      sendTextMessage();
+    }
+
+    // Get AI response (placeholder)
+    async function getAIResponse(message) {
+      const lowerMsg = message.toLowerCase();
+
+      // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (lowerMsg.includes('date') || lowerMsg.includes('anniversary') || lowerMsg.includes('birthday')) {
+        return "Don't forget - your anniversary is coming up on January 15th! You better have something planned, mister. And your mother-in-law's birthday is next month. I've already picked out the perfect gift for her on the wishlist.";
+      } else if (lowerMsg.includes('chore') || lowerMsg.includes('task') || lowerMsg.includes('do')) {
+        return "Oh, where do I even start? The gutters need cleaning, the garage door still squeaks, and you promised to fix that leaky faucet three weeks ago. Should I go on?";
+      } else if (lowerMsg.includes('wishlist') || lowerMsg.includes('gift')) {
+        return "I've been eyeing that beautiful necklace from Kay Jewelers. And those new kitchen towels we saw at Bed Bath & Beyond. Oh, and flowers are always nice - just saying!";
+      } else if (lowerMsg.includes('reminder')) {
+        return "Let me check... You need to pick up the dry cleaning by 5 PM, call your mother back (she left 3 messages!), and don't forget we have dinner with the Johnsons on Saturday.";
+      } else if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+        return "Well, hello there! About time you checked in. What do you need help with today?";
+      } else {
+        return "Mhmm, I hear you. Is there something specific you need help remembering? Important dates, chores, the wishlist? You know I keep track of everything around here!";
+      }
+    }
+
+    // Enter key to send
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendTextMessage();
+      }
+    });
+
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+    // Initialize status
+    updateStatus('disconnected', 'Click Connect to start voice chat', '');
+  </script>
+</body>
+</html>

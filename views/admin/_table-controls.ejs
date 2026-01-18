@@ -1,0 +1,236 @@
+<script>
+// =============================================
+// Reusable Table Controls: Pagination & Selection
+// =============================================
+
+class TableControls {
+  constructor(options = {}) {
+    this.tableBodyId = options.tableBodyId || 'tableBody';
+    this.paginationId = options.paginationId || 'pagination';
+    this.pageSizeId = options.pageSizeId || 'pageSize';
+    this.selectAllId = options.selectAllId || 'selectAll';
+    this.bulkActionsId = options.bulkActionsId || 'bulkActions';
+    this.selectedCountId = options.selectedCountId || 'selectedCount';
+    this.showingStartId = options.showingStartId || 'showingStart';
+    this.showingEndId = options.showingEndId || 'showingEnd';
+    this.totalRowsId = options.totalRowsId || 'totalRows';
+    this.hasCheckboxes = options.hasCheckboxes !== false; // default true
+
+    this.currentPage = 1;
+    this.pageSize = 10;
+    this.allRows = [];
+
+    this.init();
+  }
+
+  init() {
+    // Store all rows (exclude empty state rows with colspan)
+    const tbody = document.getElementById(this.tableBodyId);
+    if (tbody) {
+      if (this.hasCheckboxes) {
+        this.allRows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.querySelector('.row-checkbox'));
+      } else {
+        // For display-only grids, use all rows except empty state rows
+        this.allRows = Array.from(tbody.querySelectorAll('tr')).filter(row => !row.querySelector('[colspan]'));
+      }
+      this.totalRows = this.allRows.length;
+    }
+
+    // Initialize page size
+    const pageSizeSelect = document.getElementById(this.pageSizeId);
+    if (pageSizeSelect) {
+      this.pageSize = parseInt(pageSizeSelect.value) || 10;
+      pageSizeSelect.addEventListener('change', (e) => {
+        this.pageSize = parseInt(e.target.value);
+        this.currentPage = 1;
+        this.render();
+      });
+    }
+
+    // Initialize select all - use click event for better toggle behavior
+    const selectAll = document.getElementById(this.selectAllId);
+    if (selectAll) {
+      selectAll.addEventListener('click', (e) => {
+        this.toggleSelectAll(e.target.checked);
+      });
+    }
+
+    // Initialize row checkboxes
+    this.initRowCheckboxes();
+
+    // Initial render
+    this.render();
+  }
+
+  initRowCheckboxes() {
+    if (this.hasCheckboxes) {
+      // Checkbox change - only updates bulk actions, no row highlighting
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          this.updateBulkActions();
+          this.updateSelectAllState();
+        });
+      });
+    }
+
+    // Row click - highlights the row (works with or without checkboxes)
+    this.allRows.forEach(row => {
+      row.style.cursor = 'pointer';
+      row.addEventListener('click', (e) => {
+        this.handleRowClick(e, row);
+      });
+    });
+  }
+
+  handleRowClick(event, row) {
+    const target = event.target;
+
+    // Don't highlight if clicking on interactive elements (checkbox, buttons, links)
+    if (target.tagName === 'BUTTON' || target.tagName === 'A' ||
+        target.tagName === 'INPUT' || target.tagName === 'SELECT' ||
+        target.tagName === 'I' || target.closest('button') ||
+        target.closest('a') || target.closest('.btn-group')) {
+      return;
+    }
+
+    // Clear all other row highlights first
+    this.allRows.forEach(r => r.classList.remove('selected'));
+
+    // Highlight the clicked row
+    row.classList.add('selected');
+  }
+
+  toggleSelectAll(checked) {
+    const visibleCheckboxes = this.getVisibleCheckboxes();
+    visibleCheckboxes.forEach(cb => {
+      cb.checked = checked;
+    });
+    this.updateBulkActions();
+  }
+
+  getVisibleCheckboxes() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    const visibleRows = this.allRows.slice(start, end);
+    return visibleRows.map(row => row.querySelector('.row-checkbox')).filter(Boolean);
+  }
+
+  updateSelectAllState() {
+    const selectAll = document.getElementById(this.selectAllId);
+    if (!selectAll) return;
+
+    const visibleCheckboxes = this.getVisibleCheckboxes();
+    const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
+
+    if (checkedCount === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else if (checkedCount === visibleCheckboxes.length) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else {
+      selectAll.checked = false;
+      selectAll.indeterminate = true;
+    }
+  }
+
+  updateBulkActions() {
+    const bulkActions = document.getElementById(this.bulkActionsId);
+    const selectedCount = document.getElementById(this.selectedCountId);
+    const allChecked = document.querySelectorAll('.row-checkbox:checked');
+
+    if (selectedCount) {
+      selectedCount.textContent = allChecked.length;
+    }
+    if (bulkActions) {
+      if (allChecked.length > 0) {
+        bulkActions.classList.add('show');
+      } else {
+        bulkActions.classList.remove('show');
+      }
+    }
+  }
+
+  getSelectedIds() {
+    return Array.from(document.querySelectorAll('.row-checkbox:checked'))
+      .map(cb => cb.dataset.id);
+  }
+
+  render() {
+    const tbody = document.getElementById(this.tableBodyId);
+    if (!tbody) return;
+
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+
+    // Show/hide rows based on pagination
+    this.allRows.forEach((row, index) => {
+      row.style.display = (index >= start && index < end) ? '' : 'none';
+    });
+
+    // Update showing info
+    const showingStart = document.getElementById(this.showingStartId);
+    const showingEnd = document.getElementById(this.showingEndId);
+    const totalRows = document.getElementById(this.totalRowsId);
+
+    if (showingStart) showingStart.textContent = this.totalRows > 0 ? start + 1 : 0;
+    if (showingEnd) showingEnd.textContent = Math.min(end, this.totalRows);
+    if (totalRows) totalRows.textContent = this.totalRows;
+
+    // Render pagination
+    this.renderPagination();
+
+    // Update select all state
+    this.updateSelectAllState();
+  }
+
+  renderPagination() {
+    const pagination = document.getElementById(this.paginationId);
+    if (!pagination) return;
+
+    const totalPages = Math.ceil(this.totalRows / this.pageSize);
+    let html = '';
+
+    // Previous button
+    html += `<li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
+      <a class="page-link" href="#" data-page="${this.currentPage - 1}">&laquo;</a>
+    </li>`;
+
+    // Page numbers
+    const startPage = Math.max(1, this.currentPage - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<li class="page-item ${i === this.currentPage ? 'active' : ''}">
+        <a class="page-link" href="#" data-page="${i}">${i}</a>
+      </li>`;
+    }
+
+    // Next button
+    html += `<li class="page-item ${this.currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+      <a class="page-link" href="#" data-page="${this.currentPage + 1}">&raquo;</a>
+    </li>`;
+
+    pagination.innerHTML = html;
+
+    // Add click handlers
+    pagination.querySelectorAll('.page-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = parseInt(e.target.dataset.page);
+        if (page >= 1 && page <= totalPages) {
+          this.currentPage = page;
+          this.render();
+        }
+      });
+    });
+  }
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', () => {
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+});
+</script>

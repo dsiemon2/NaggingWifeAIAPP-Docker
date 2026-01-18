@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+    .auth-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .auth-header {
+      background: #1e3a5f;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    .auth-header h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .auth-body {
+      padding: 2rem;
+    }
+    .btn-primary {
+      background: #1e3a5f;
+      border-color: #1e3a5f;
+    }
+    .btn-primary:hover {
+      background: #2d5a87;
+      border-color: #2d5a87;
+    }
+    .status-icon {
+      font-size: 4rem;
+    }
+    .status-success { color: #198754; }
+    .status-error { color: #dc3545; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5 col-lg-4">
+        <div class="auth-card">
+          <div class="auth-header">
+            <i class="bi bi-envelope-check fs-1 mb-2 d-block"></i>
+            <h1>Email Verification</h1>
+          </div>
+
+          <div class="auth-body text-center">
+            <!-- Success State -->
+            <div id="successState" class="d-none">
+              <i class="bi bi-check-circle-fill status-icon status-success mb-3"></i>
+              <h5>Email Verified!</h5>
+              <p class="text-muted">Your email has been successfully verified. You can now sign in to your account.</p>
+              <a href="/auth/login?verified=true" class="btn btn-primary">Sign In</a>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="d-none">
+              <i class="bi bi-x-circle-fill status-icon status-error mb-3"></i>
+              <h5>Verification Failed</h5>
+              <p class="text-muted" id="errorMessage">The verification link is invalid or has expired.</p>
+              <a href="/auth/login" class="btn btn-primary">Back to Sign In</a>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState">
+              <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="text-muted">Verifying your email...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Get status from URL params (for redirect-based verification)
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const message = urlParams.get('message');
+
+    if (status === 'success') {
+      document.getElementById('loadingState').classList.add('d-none');
+      document.getElementById('successState').classList.remove('d-none');
+    } else if (status === 'error') {
+      document.getElementById('loadingState').classList.add('d-none');
+      document.getElementById('errorState').classList.remove('d-none');
+      if (message) {
+        document.getElementById('errorMessage').textContent = decodeURIComponent(message.replace(/\+/g, ' '));
+      }
+    } else {
+      // If no status, hide loading and show error
+      document.getElementById('loadingState').classList.add('d-none');
+      document.getElementById('errorState').classList.remove('d-none');
+      document.getElementById('errorMessage').textContent = 'No verification token provided.';
+    }
+  </script>
+</body>
+</html>

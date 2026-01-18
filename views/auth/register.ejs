@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #8e2de2 0%, #e91e63 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 2rem 0;
+    }
+    .auth-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .auth-header {
+      background: linear-gradient(135deg, #8e2de2 0%, #e91e63 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    .auth-header h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .auth-body {
+      padding: 2rem;
+    }
+    .form-floating label {
+      color: #6c757d;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      z-index: 10;
+      color: #6c757d;
+    }
+    .input-group-text {
+      background: transparent;
+      border-left: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #8e2de2 0%, #e91e63 100%);
+      border: none;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #7b27c9 0%, #c91854 100%);
+      border: none;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 1.5rem 0;
+      color: #6c757d;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .divider span {
+      padding: 0 1rem;
+    }
+    .btn-oauth {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      font-weight: 500;
+    }
+    .btn-oauth img {
+      width: 20px;
+      height: 20px;
+    }
+    .validation-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .is-checking {
+      border-color: #0d6efd;
+    }
+    .password-strength {
+      height: 4px;
+      border-radius: 2px;
+      margin-top: 0.5rem;
+      transition: all 0.3s;
+    }
+    .strength-weak { background: #dc3545; width: 33%; }
+    .strength-medium { background: #ffc107; width: 66%; }
+    .strength-strong { background: #198754; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="auth-card">
+          <div class="auth-header">
+            <i class="bi bi-heart-fill fs-1 mb-2 d-block"></i>
+            <h1>Create Account</h1>
+            <p class="mb-0 opacity-75">Join Nagging Wife AI</p>
+          </div>
+
+          <div class="auth-body">
+            <!-- Alert for errors -->
+            <div id="alertContainer"></div>
+
+            <form id="registerForm" novalidate>
+              <!-- Company Domain -->
+              <div class="mb-3">
+                <label for="companyDomain" class="form-label">Company Domain</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-building"></i></span>
+                  <input type="text" class="form-control" id="companyDomain" name="companyDomain"
+                         placeholder="your-company" required>
+                </div>
+                <div class="form-text">Enter your company's domain (e.g., "acme" for acme.example.com)</div>
+              </div>
+
+              <!-- Full Name -->
+              <div class="mb-3">
+                <label for="name" class="form-label">Full Name</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-person"></i></span>
+                  <input type="text" class="form-control" id="name" name="name"
+                         placeholder="John Doe" required minlength="2">
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <div class="input-group position-relative">
+                  <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                  <input type="email" class="form-control" id="email" name="email"
+                         placeholder="you@example.com" required>
+                  <span class="validation-icon" id="emailValidation"></span>
+                </div>
+                <div class="invalid-feedback" id="emailFeedback"></div>
+              </div>
+
+              <!-- Username (Optional) -->
+              <div class="mb-3">
+                <label for="username" class="form-label">Username <span class="text-muted">(optional)</span></label>
+                <div class="input-group position-relative">
+                  <span class="input-group-text">@</span>
+                  <input type="text" class="form-control" id="username" name="username"
+                         placeholder="johndoe" pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30">
+                  <span class="validation-icon" id="usernameValidation"></span>
+                </div>
+                <div class="form-text">Letters, numbers, and underscores only</div>
+                <div class="invalid-feedback" id="usernameFeedback"></div>
+              </div>
+
+              <!-- Password -->
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group position-relative">
+                  <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                  <input type="password" class="form-control" id="password" name="password"
+                         placeholder="Create a strong password" required minlength="8">
+                  <span class="password-toggle" onclick="togglePassword('password')">
+                    <i class="bi bi-eye" id="passwordToggleIcon"></i>
+                  </span>
+                </div>
+                <div class="password-strength" id="passwordStrength"></div>
+                <div class="form-text">
+                  <small id="passwordRequirements">
+                    <span id="reqLength" class="text-muted"><i class="bi bi-x-circle"></i> 8+ characters</span> &bull;
+                    <span id="reqUpper" class="text-muted"><i class="bi bi-x-circle"></i> Uppercase</span> &bull;
+                    <span id="reqLower" class="text-muted"><i class="bi bi-x-circle"></i> Lowercase</span> &bull;
+                    <span id="reqNumber" class="text-muted"><i class="bi bi-x-circle"></i> Number</span>
+                  </small>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="mb-4">
+                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                <div class="input-group position-relative">
+                  <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                  <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                         placeholder="Confirm your password" required>
+                  <span class="password-toggle" onclick="togglePassword('confirmPassword')">
+                    <i class="bi bi-eye" id="confirmPasswordToggleIcon"></i>
+                  </span>
+                </div>
+                <div class="invalid-feedback" id="confirmPasswordFeedback">Passwords do not match</div>
+              </div>
+
+              <!-- Terms -->
+              <div class="mb-4">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                  <label class="form-check-label" for="agreeTerms">
+                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of Service</a>
+                    and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" class="btn btn-primary w-100 py-2" id="submitBtn">
+                <span id="submitText">Create Account</span>
+                <span id="submitSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+              </button>
+            </form>
+
+            <!-- OAuth Divider -->
+            <div class="divider">
+              <span>or continue with</span>
+            </div>
+
+            <!-- OAuth Buttons -->
+            <div class="d-grid gap-2">
+              <button type="button" class="btn btn-outline-dark btn-oauth" id="googleBtn" onclick="registerWithGoogle()">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                <span id="googleBtnText">Sign up with Google</span>
+              </button>
+              <button type="button" class="btn btn-outline-dark btn-oauth" id="microsoftBtn" onclick="registerWithMicrosoft()">
+                <svg width="20" height="20" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+                <span id="microsoftBtnText">Sign up with Microsoft</span>
+              </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center mt-4">
+              <span class="text-muted">Already have an account?</span>
+              <a href="/auth/login" class="text-decoration-none">Sign In</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Debounce helper
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Toggle password visibility
+    function togglePassword(fieldId) {
+      const field = document.getElementById(fieldId);
+      const icon = document.getElementById(fieldId + 'ToggleIcon');
+      if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+      } else {
+        field.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+      }
+    }
+
+    // Show alert
+    function showAlert(message, type = 'danger') {
+      const container = document.getElementById('alertContainer');
+      container.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+    }
+
+    // Password strength checker
+    function checkPasswordStrength(password) {
+      const requirements = {
+        length: password.length >= 8,
+        upper: /[A-Z]/.test(password),
+        lower: /[a-z]/.test(password),
+        number: /\d/.test(password),
+      };
+
+      // Update requirement indicators
+      document.getElementById('reqLength').className = requirements.length ? 'text-success' : 'text-muted';
+      document.getElementById('reqLength').innerHTML = requirements.length ? '<i class="bi bi-check-circle"></i> 8+ characters' : '<i class="bi bi-x-circle"></i> 8+ characters';
+
+      document.getElementById('reqUpper').className = requirements.upper ? 'text-success' : 'text-muted';
+      document.getElementById('reqUpper').innerHTML = requirements.upper ? '<i class="bi bi-check-circle"></i> Uppercase' : '<i class="bi bi-x-circle"></i> Uppercase';
+
+      document.getElementById('reqLower').className = requirements.lower ? 'text-success' : 'text-muted';
+      document.getElementById('reqLower').innerHTML = requirements.lower ? '<i class="bi bi-check-circle"></i> Lowercase' : '<i class="bi bi-x-circle"></i> Lowercase';
+
+      document.getElementById('reqNumber').className = requirements.number ? 'text-success' : 'text-muted';
+      document.getElementById('reqNumber').innerHTML = requirements.number ? '<i class="bi bi-check-circle"></i> Number' : '<i class="bi bi-x-circle"></i> Number';
+
+      // Calculate strength
+      const score = Object.values(requirements).filter(Boolean).length;
+      const strengthBar = document.getElementById('passwordStrength');
+
+      if (score <= 2) {
+        strengthBar.className = 'password-strength strength-weak';
+      } else if (score === 3) {
+        strengthBar.className = 'password-strength strength-medium';
+      } else {
+        strengthBar.className = 'password-strength strength-strong';
+      }
+
+      return Object.values(requirements).every(Boolean);
+    }
+
+    // Check email availability
+    const checkEmail = debounce(async (email) => {
+      const companyDomain = document.getElementById('companyDomain').value;
+      if (!companyDomain || !email) return;
+
+      const validation = document.getElementById('emailValidation');
+      const feedback = document.getElementById('emailFeedback');
+      const input = document.getElementById('email');
+
+      validation.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span>';
+      input.classList.add('is-checking');
+
+      try {
+        const res = await fetch(`/api/auth/check-email/${encodeURIComponent(email)}?companyDomain=${encodeURIComponent(companyDomain)}`);
+        const data = await res.json();
+
+        if (data.success && data.data.available) {
+          validation.innerHTML = '<i class="bi bi-check-circle text-success"></i>';
+          input.classList.remove('is-invalid', 'is-checking');
+          input.classList.add('is-valid');
+        } else {
+          validation.innerHTML = '<i class="bi bi-x-circle text-danger"></i>';
+          input.classList.remove('is-valid', 'is-checking');
+          input.classList.add('is-invalid');
+          feedback.textContent = 'Email already registered';
+        }
+      } catch (err) {
+        validation.innerHTML = '';
+        input.classList.remove('is-checking');
+      }
+    }, 500);
+
+    // Check username availability
+    const checkUsername = debounce(async (username) => {
+      const companyDomain = document.getElementById('companyDomain').value;
+      if (!companyDomain || !username) return;
+
+      const validation = document.getElementById('usernameValidation');
+      const feedback = document.getElementById('usernameFeedback');
+      const input = document.getElementById('username');
+
+      validation.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span>';
+      input.classList.add('is-checking');
+
+      try {
+        const res = await fetch(`/api/auth/check-username/${encodeURIComponent(username)}?companyDomain=${encodeURIComponent(companyDomain)}`);
+        const data = await res.json();
+
+        if (data.success && data.data.available) {
+          validation.innerHTML = '<i class="bi bi-check-circle text-success"></i>';
+          input.classList.remove('is-invalid', 'is-checking');
+          input.classList.add('is-valid');
+        } else {
+          validation.innerHTML = '<i class="bi bi-x-circle text-danger"></i>';
+          input.classList.remove('is-valid', 'is-checking');
+          input.classList.add('is-invalid');
+          feedback.textContent = 'Username already taken';
+        }
+      } catch (err) {
+        validation.innerHTML = '';
+        input.classList.remove('is-checking');
+      }
+    }, 500);
+
+    // Event listeners
+    document.getElementById('email').addEventListener('input', (e) => {
+      if (e.target.value && e.target.checkValidity()) {
+        checkEmail(e.target.value);
+      }
+    });
+
+    document.getElementById('username').addEventListener('input', (e) => {
+      if (e.target.value) {
+        checkUsername(e.target.value);
+      }
+    });
+
+    document.getElementById('password').addEventListener('input', (e) => {
+      checkPasswordStrength(e.target.value);
+    });
+
+    document.getElementById('confirmPassword').addEventListener('input', (e) => {
+      const password = document.getElementById('password').value;
+      const input = e.target;
+
+      if (input.value === password) {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+      } else {
+        input.classList.remove('is-valid');
+        input.classList.add('is-invalid');
+      }
+    });
+
+    // OAuth configuration
+    let oauthConfig = { google: false, microsoft: false };
+
+    // Check OAuth availability
+    async function checkOAuthStatus() {
+      try {
+        const [googleRes, msRes] = await Promise.all([
+          fetch('/api/oauth/google/status'),
+          fetch('/api/oauth/microsoft/status'),
+        ]);
+        const [googleData, msData] = await Promise.all([googleRes.json(), msRes.json()]);
+
+        oauthConfig.google = googleData.data?.enabled || false;
+        oauthConfig.microsoft = msData.data?.enabled || false;
+
+        // Update button states
+        if (!oauthConfig.google) {
+          document.getElementById('googleBtn').disabled = true;
+          document.getElementById('googleBtnText').textContent = 'Google (Not configured)';
+        }
+        if (!oauthConfig.microsoft) {
+          document.getElementById('microsoftBtn').disabled = true;
+          document.getElementById('microsoftBtnText').textContent = 'Microsoft (Not configured)';
+        }
+      } catch (err) {
+        console.error('Failed to check OAuth status:', err);
+      }
+    }
+
+    checkOAuthStatus();
+
+    // OAuth registration - uses company domain from form
+    function registerWithGoogle() {
+      if (!oauthConfig.google) {
+        showAlert('Google sign-in is not configured');
+        return;
+      }
+      const domain = document.getElementById('companyDomain').value;
+      if (!domain) {
+        showAlert('Please enter your company domain first');
+        document.getElementById('companyDomain').focus();
+        return;
+      }
+      window.location.href = `/api/oauth/google?companyDomain=${encodeURIComponent(domain)}`;
+    }
+
+    function registerWithMicrosoft() {
+      if (!oauthConfig.microsoft) {
+        showAlert('Microsoft sign-in is not configured');
+        return;
+      }
+      const domain = document.getElementById('companyDomain').value;
+      if (!domain) {
+        showAlert('Please enter your company domain first');
+        document.getElementById('companyDomain').focus();
+        return;
+      }
+      window.location.href = `/api/oauth/microsoft?companyDomain=${encodeURIComponent(domain)}`;
+    }
+
+    // Form submission
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target;
+      const submitBtn = document.getElementById('submitBtn');
+      const submitText = document.getElementById('submitText');
+      const submitSpinner = document.getElementById('submitSpinner');
+
+      // Validate form
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      // Check password match
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match');
+        return;
+      }
+
+      // Check password requirements
+      if (!checkPasswordStrength(password)) {
+        showAlert('Password does not meet requirements');
+        return;
+      }
+
+      // Show loading state
+      submitBtn.disabled = true;
+      submitText.textContent = 'Creating Account...';
+      submitSpinner.classList.remove('d-none');
+
+      try {
+        const formData = {
+          email: document.getElementById('email').value,
+          name: document.getElementById('name').value,
+          password: password,
+          companyDomain: document.getElementById('companyDomain').value,
+        };
+
+        const username = document.getElementById('username').value;
+        if (username) {
+          formData.username = username;
+        }
+
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // Show success and redirect
+          showAlert('Account created! Please check your email to verify your account.', 'success');
+          setTimeout(() => {
+            window.location.href = '/auth/login?registered=true';
+          }, 2000);
+        } else {
+          showAlert(data.error || 'Registration failed');
+        }
+      } catch (err) {
+        showAlert('An error occurred. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitText.textContent = 'Create Account';
+        submitSpinner.classList.add('d-none');
+      }
+    });
+  </script>
+</body>
+</html>

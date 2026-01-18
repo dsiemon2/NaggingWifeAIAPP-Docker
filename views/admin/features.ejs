@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Features - Nagging Wife AI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --sidebar-bg: <%= branding?.primaryColor || '#9333ea' %>; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: var(--sidebar-bg); position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+    .feature-card { transition: all 0.2s; }
+    .feature-card.disabled { opacity: 0.5; }
+    .feature-toggle { width: 3em; height: 1.5em; }
+    .config-section { border-left: 3px solid #0d6efd; padding-left: 1rem; margin-left: 1rem; margin-top: 1rem; }
+    .config-section.disabled { opacity: 0.5; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'features', branding }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <h2 class="mb-4"><i class="bi bi-toggles text-primary me-2"></i>Feature Configuration</h2>
+
+        <div class="toast-container"></div>
+
+        <form id="featuresForm">
+          <!-- Feature Configuration Section -->
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Feature Configuration</h5>
+            </div>
+            <div class="card-body">
+              <!-- FAQ Section -->
+              <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div>
+                  <h6 class="mb-1"><i class="bi bi-question-circle text-info me-2"></i>FAQ Section</h6>
+                  <small class="text-muted">Display frequently asked questions on the main page</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="faqEnabled" <%= features?.faqEnabled ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <!-- Top Nav Sticky Bar -->
+              <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div>
+                  <h6 class="mb-1"><i class="bi bi-pin-angle text-warning me-2"></i>Top Nav Sticky Bar</h6>
+                  <small class="text-muted">Show promotional sticky bar at top of page</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="stickyBarEnabled" onchange="toggleStickyBarConfig()" <%= features?.stickyBarEnabled ? 'checked' : '' %>>
+                </div>
+              </div>
+              <div class="config-section" id="stickyBarConfig">
+                <div class="row">
+                  <div class="col-md-8 mb-2">
+                    <label class="form-label small">Sticky Bar Text</label>
+                    <input type="text" class="form-control form-control-sm" id="stickyBarText" placeholder="e.g., Don't forget - Anniversary coming up!" value="<%= features?.stickyBarText || '' %>">
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label small">Background Color</label>
+                    <input type="color" class="form-control form-control-color" id="stickyBarColor" value="<%= features?.stickyBarBgColor || '#9333ea' %>">
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label small">Link URL (optional)</label>
+                    <input type="url" class="form-control form-control-sm" id="stickyBarLink" placeholder="https://..." value="<%= features?.stickyBarLink || '' %>">
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label small">Link Text (optional)</label>
+                    <input type="text" class="form-control form-control-sm" id="stickyBarLinkText" placeholder="Learn More" value="<%= features?.stickyBarLinkText || '' %>">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Chat Configuration -->
+          <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Live Chat Configuration</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div>
+                  <h6 class="mb-1"><i class="bi bi-chat-left-text text-success me-2"></i>Enable Live Chat</h6>
+                  <small class="text-muted">Show live chat widget for family support</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="liveChatEnabled" onchange="toggleLiveChatConfig()" <%= features?.liveChatEnabled ? 'checked' : '' %>>
+                </div>
+              </div>
+              <div class="config-section" id="liveChatConfig">
+                <div class="mb-3">
+                  <label class="form-label">Chat Provider</label>
+                  <select class="form-select" id="chatProvider" onchange="toggleChatProviderFields()">
+                    <option value="builtin" <%= features?.chatProvider === 'builtin' ? 'selected' : '' %>>Built-in Chat</option>
+                    <option value="intercom" <%= features?.chatProvider === 'intercom' ? 'selected' : '' %>>Intercom</option>
+                    <option value="zendesk" <%= features?.chatProvider === 'zendesk' ? 'selected' : '' %>>Zendesk Chat</option>
+                    <option value="crisp" <%= features?.chatProvider === 'crisp' ? 'selected' : '' %>>Crisp</option>
+                    <option value="tawk" <%= features?.chatProvider === 'tawk' ? 'selected' : '' %>>Tawk.to</option>
+                    <option value="drift" <%= features?.chatProvider === 'drift' ? 'selected' : '' %>>Drift</option>
+                  </select>
+                </div>
+
+                <!-- Built-in Chat Settings -->
+                <div id="builtinChatSettings">
+                  <div class="row">
+                    <div class="col-md-6 mb-2">
+                      <label class="form-label small">Welcome Message</label>
+                      <input type="text" class="form-control form-control-sm" id="chatWelcomeMessage" placeholder="Hi honey! What do you need help with?" value="<%= features?.chatWelcomeMessage || 'Hi! How can I help you today?' %>">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                      <label class="form-label small">Agent Name</label>
+                      <input type="text" class="form-control form-control-sm" id="chatAgentName" placeholder="Wifey" value="<%= features?.chatAgentName || 'Support' %>">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                      <label class="form-label small">Widget Color</label>
+                      <input type="color" class="form-control form-control-color" id="chatWidgetColor" value="<%= features?.chatWidgetColor || '#9333ea' %>">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                      <label class="form-label small">Position</label>
+                      <select class="form-select form-select-sm" id="chatPosition">
+                        <option value="bottom-right" <%= features?.chatPosition === 'bottom-right' ? 'selected' : '' %>>Bottom Right</option>
+                        <option value="bottom-left" <%= features?.chatPosition === 'bottom-left' ? 'selected' : '' %>>Bottom Left</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                      <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="chatShowOnMobile" <%= features?.chatShowOnMobile !== false ? 'checked' : '' %>>
+                        <label class="form-check-label small">Show on Mobile</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- External Provider Settings -->
+                <div id="externalChatSettings" style="display: none;">
+                  <div class="mb-2">
+                    <label class="form-label small">Widget ID / API Key</label>
+                    <input type="text" class="form-control form-control-sm" id="chatWidgetId" placeholder="Your widget ID or API key" value="<%= features?.chatWidgetId || '' %>">
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">Embed Code (optional)</label>
+                    <textarea class="form-control form-control-sm" id="chatEmbedCode" rows="3" placeholder="Paste embed code here..."><%= features?.chatEmbedCode || '' %></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notification Configuration -->
+          <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+              <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Configuration</h5>
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">Configure which notifications to send to family members</p>
+
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <h6 class="mb-0"><i class="bi bi-envelope me-2"></i>Email Notifications</h6>
+                  <small class="text-muted">Send notifications via email</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="emailNotifications" <%= features?.emailNotifications !== false ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <h6 class="mb-0"><i class="bi bi-chat-dots me-2"></i>SMS Notifications</h6>
+                  <small class="text-muted">Send notifications via SMS</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="smsNotifications" <%= features?.smsNotifications ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <h6 class="mb-0"><i class="bi bi-app-indicator me-2"></i>Push Notifications</h6>
+                  <small class="text-muted">Browser push notifications</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="pushNotifications" <%= features?.pushNotifications ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <h6 class="mb-0"><i class="bi bi-bag-heart me-2"></i>Gift Order Confirmations</h6>
+                  <small class="text-muted">Send gift order confirmation notifications</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="orderConfirmations" <%= features?.orderConfirmations !== false ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                  <h6 class="mb-0"><i class="bi bi-megaphone me-2"></i>Promotional Emails</h6>
+                  <small class="text-muted">Promotional and marketing communications</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="marketingEmails" <%= features?.marketingEmails ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center py-2">
+                <div>
+                  <h6 class="mb-0"><i class="bi bi-calendar-heart me-2"></i>Date Reminders</h6>
+                  <small class="text-muted">Send reminders for important dates and anniversaries</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input feature-toggle" type="checkbox" id="appointmentReminders" <%= features?.appointmentReminders !== false ? 'checked' : '' %>>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Social Media Configuration -->
+          <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0"><i class="bi bi-share me-2"></i>Social Media Configuration</h5>
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">Configure social media links and sharing options</p>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0"><i class="bi bi-facebook text-primary me-1"></i>Facebook</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="facebookEnabled" <%= features?.facebookEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <input type="url" class="form-control" id="facebookUrl" placeholder="https://facebook.com/yourpage" value="<%= features?.facebookUrl || '' %>">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0"><i class="bi bi-twitter-x me-1"></i>X (Twitter)</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="twitterEnabled" <%= features?.twitterEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <input type="url" class="form-control" id="twitterUrl" placeholder="https://x.com/yourhandle" value="<%= features?.twitterUrl || '' %>">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0"><i class="bi bi-instagram text-danger me-1"></i>Instagram</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="instagramEnabled" <%= features?.instagramEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <input type="url" class="form-control" id="instagramUrl" placeholder="https://instagram.com/yourhandle" value="<%= features?.instagramUrl || '' %>">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0"><i class="bi bi-linkedin text-primary me-1"></i>LinkedIn</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="linkedinEnabled" <%= features?.linkedinEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <input type="url" class="form-control" id="linkedinUrl" placeholder="https://linkedin.com/company/yourcompany" value="<%= features?.linkedinUrl || '' %>">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0"><i class="bi bi-youtube text-danger me-1"></i>YouTube</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="youtubeEnabled" <%= features?.youtubeEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <input type="url" class="form-control" id="youtubeUrl" placeholder="https://youtube.com/@yourchannel" value="<%= features?.youtubeUrl || '' %>">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0"><i class="bi bi-tiktok me-1"></i>TikTok</label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="tiktokEnabled" <%= features?.tiktokEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <input type="url" class="form-control" id="tiktokUrl" placeholder="https://tiktok.com/@yourhandle" value="<%= features?.tiktokUrl || '' %>">
+                </div>
+              </div>
+
+              <hr>
+
+              <h6 class="mb-3">Social Sharing Options</h6>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="shareOnFacebook" <%= features?.shareOnFacebook !== false ? 'checked' : '' %>>
+                    <label class="form-check-label">Enable Facebook Share</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="shareOnTwitter" <%= features?.shareOnTwitter !== false ? 'checked' : '' %>>
+                    <label class="form-check-label">Enable X/Twitter Share</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="shareOnLinkedin" <%= features?.shareOnLinkedin ? 'checked' : '' %>>
+                    <label class="form-check-label">Enable LinkedIn Share</label>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="shareOnWhatsapp" <%= features?.shareOnWhatsapp !== false ? 'checked' : '' %>>
+                    <label class="form-check-label">Enable WhatsApp Share</label>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="shareOnEmail" <%= features?.shareOnEmail !== false ? 'checked' : '' %>>
+                    <label class="form-check-label">Enable Email Share</label>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="copyLinkButton" <%= features?.copyLinkButton !== false ? 'checked' : '' %>>
+                    <label class="form-check-label">Enable Copy Link</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" data-bs-toggle="tooltip" title="Save all feature settings">
+            <i class="bi bi-save me-2"></i>Save Features
+          </button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const token = '<%= token %>';
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+      toggleStickyBarConfig();
+      toggleLiveChatConfig();
+      toggleChatProviderFields();
+    });
+
+    function showToast(message, type = 'success') {
+      const container = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast show align-items-center text-bg-${type} border-0`;
+      toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function toggleStickyBarConfig() {
+      const enabled = document.getElementById('stickyBarEnabled').checked;
+      const config = document.getElementById('stickyBarConfig');
+      config.classList.toggle('disabled', !enabled);
+    }
+
+    function toggleLiveChatConfig() {
+      const enabled = document.getElementById('liveChatEnabled').checked;
+      const config = document.getElementById('liveChatConfig');
+      config.classList.toggle('disabled', !enabled);
+    }
+
+    function toggleChatProviderFields() {
+      const provider = document.getElementById('chatProvider').value;
+      const builtinSettings = document.getElementById('builtinChatSettings');
+      const externalSettings = document.getElementById('externalChatSettings');
+
+      if (provider === 'builtin') {
+        builtinSettings.style.display = 'block';
+        externalSettings.style.display = 'none';
+      } else {
+        builtinSettings.style.display = 'none';
+        externalSettings.style.display = 'block';
+      }
+    }
+
+    document.getElementById('featuresForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const data = {
+          // Feature Configuration
+          faqEnabled: document.getElementById('faqEnabled').checked,
+          stickyBarEnabled: document.getElementById('stickyBarEnabled').checked,
+          stickyBarText: document.getElementById('stickyBarText').value,
+          stickyBarColor: document.getElementById('stickyBarColor').value,
+          stickyBarLink: document.getElementById('stickyBarLink').value,
+          stickyBarLinkText: document.getElementById('stickyBarLinkText').value,
+          // Live Chat
+          liveChatEnabled: document.getElementById('liveChatEnabled').checked,
+          chatProvider: document.getElementById('chatProvider').value,
+          chatWelcomeMessage: document.getElementById('chatWelcomeMessage').value,
+          chatAgentName: document.getElementById('chatAgentName').value,
+          chatWidgetColor: document.getElementById('chatWidgetColor').value,
+          chatPosition: document.getElementById('chatPosition').value,
+          chatShowOnMobile: document.getElementById('chatShowOnMobile').checked,
+          chatWidgetId: document.getElementById('chatWidgetId').value,
+          chatEmbedCode: document.getElementById('chatEmbedCode').value,
+          // Notifications
+          emailNotifications: document.getElementById('emailNotifications').checked,
+          smsNotifications: document.getElementById('smsNotifications').checked,
+          pushNotifications: document.getElementById('pushNotifications').checked,
+          orderConfirmations: document.getElementById('orderConfirmations').checked,
+          marketingEmails: document.getElementById('marketingEmails').checked,
+          appointmentReminders: document.getElementById('appointmentReminders').checked,
+          // Social Media
+          facebookEnabled: document.getElementById('facebookEnabled').checked,
+          facebookUrl: document.getElementById('facebookUrl').value,
+          twitterEnabled: document.getElementById('twitterEnabled').checked,
+          twitterUrl: document.getElementById('twitterUrl').value,
+          instagramEnabled: document.getElementById('instagramEnabled').checked,
+          instagramUrl: document.getElementById('instagramUrl').value,
+          linkedinEnabled: document.getElementById('linkedinEnabled').checked,
+          linkedinUrl: document.getElementById('linkedinUrl').value,
+          youtubeEnabled: document.getElementById('youtubeEnabled').checked,
+          youtubeUrl: document.getElementById('youtubeUrl').value,
+          tiktokEnabled: document.getElementById('tiktokEnabled').checked,
+          tiktokUrl: document.getElementById('tiktokUrl').value,
+          shareOnFacebook: document.getElementById('shareOnFacebook').checked,
+          shareOnTwitter: document.getElementById('shareOnTwitter').checked,
+          shareOnLinkedin: document.getElementById('shareOnLinkedin').checked,
+          shareOnWhatsapp: document.getElementById('shareOnWhatsapp').checked,
+          shareOnEmail: document.getElementById('shareOnEmail').checked,
+          copyLinkButton: document.getElementById('copyLinkButton').checked
+        };
+
+        const res = await fetch(`/NaggingWife/admin/features?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) showToast('Features saved successfully!');
+        else showToast('Failed to save features', 'danger');
+      } catch (err) {
+        showToast('Error saving features: ' + err.message, 'danger');
+      }
+    });
+  </script>
+</body>
+</html>

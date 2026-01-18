@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agents - Nagging Wife AI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .agent-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .agent-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'ai-agents' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-robot text-primary me-2"></i>AI Agents</h2>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAgentModal">
+            <i class="bi bi-plus-lg"></i> Create Agent
+          </button>
+        </div>
+
+        <div class="row">
+          <% if (agents && agents.length > 0) { %>
+            <% agents.forEach(agent => { %>
+            <div class="col-md-4 mb-4">
+              <div class="card agent-card h-100">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0"><%= agent.name %></h5>
+                    <span class="badge bg-<%= agent.isActive ? 'success' : 'secondary' %>">
+                      <%= agent.isActive ? 'Active' : 'Inactive' %>
+                    </span>
+                  </div>
+                  <p class="card-text text-muted small"><%= agent.description || 'No description' %></p>
+                  <div class="mb-3">
+                    <span class="badge bg-info me-1"><%= agent.model || 'gpt-4' %></span>
+                    <span class="badge bg-secondary"><%= agent.voice || 'alloy' %></span>
+                  </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Configure agent">
+                    <i class="bi bi-gear"></i> Configure
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Test agent">
+                    <i class="bi bi-play"></i> Test
+                  </button>
+                </div>
+              </div>
+            </div>
+            <% }) %>
+          <% } else { %>
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body text-center py-5">
+                <i class="bi bi-robot text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">No AI Agents Yet</h5>
+                <p class="text-muted">Create your first AI agent to help with family reminders.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAgentModal">
+                  <i class="bi bi-plus-lg"></i> Create Agent
+                </button>
+              </div>
+            </div>
+          </div>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal fade" id="addAgentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-robot me-2"></i>Create AI Agent</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="addAgentForm">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Agent Name</label>
+                <input type="text" class="form-control" name="name" placeholder="e.g., Birthday Reminder" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Voice</label>
+                <select class="form-select" name="voice">
+                  <option value="alloy">Alloy (Neutral)</option>
+                  <option value="echo">Echo (Male)</option>
+                  <option value="fable">Fable (British)</option>
+                  <option value="onyx">Onyx (Deep Male)</option>
+                  <option value="nova">Nova (Female)</option>
+                  <option value="shimmer">Shimmer (Soft Female)</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">System Prompt</label>
+              <textarea class="form-control" name="systemPrompt" rows="4" placeholder="You are a helpful family reminder assistant with a 'nagging wife' personality..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Model</label>
+              <select class="form-select" name="model">
+                <option value="gpt-4o-realtime">GPT-4o Realtime (Voice)</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Agent</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+    });
+  </script>
+</body>
+</html>

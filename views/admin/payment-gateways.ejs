@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Gateways - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .provider-card { transition: all 0.2s; }
+    .provider-card.disabled { opacity: 0.5; }
+    .provider-card.active-provider { border-color: #198754 !important; background: #f8fff8; }
+    .supported-methods { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .method-badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'payment-gateways' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-credit-card-2-front text-primary me-2"></i>Payment Gateways</h2>
+          <button class="btn btn-outline-primary" onclick="testAllConnections()">
+            <i class="bi bi-check-circle me-1"></i> Test All Connections
+          </button>
+        </div>
+
+        <!-- Payment Gateway Configuration -->
+        <div class="card mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Payment Gateway Configuration</h5>
+            <small class="text-muted">Configure payment providers for gift orders and subscriptions</small>
+          </div>
+          <div class="card-body">
+            <form id="paymentGatewayForm">
+              <!-- Master Payment Gateway Toggle -->
+              <div class="d-flex justify-content-between align-items-center py-3 border-bottom bg-light px-3 rounded mb-3">
+                <div>
+                  <h6 class="mb-1"><i class="bi bi-power text-success me-2"></i>Payment Processing</h6>
+                  <small class="text-muted">Master switch - Enable/disable payment gateway integration</small>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="paymentEnabled" style="width: 3em; height: 1.5em;" onchange="togglePaymentProviders()" <%= gateways?.find(g => g.provider === 'stripe')?.isEnabled ? 'checked' : '' %>>
+                </div>
+              </div>
+
+              <div id="paymentProvidersSection">
+                <!-- Stripe -->
+                <div class="border rounded p-3 mb-3 provider-card <%= gateways?.find(g => g.provider === 'stripe')?.isEnabled ? 'active-provider' : '' %>" id="stripeSection">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1"><i class="bi bi-stripe text-primary me-2" style="font-size: 1.2em;"></i>Stripe <span class="badge bg-success ms-2">Recommended</span></h6>
+                      <small class="text-muted">Full-featured payment platform - <a href="https://stripe.com" target="_blank">stripe.com</a></small>
+                      <div class="supported-methods">
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-credit-card me-1"></i>Credit Cards</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-bank me-1"></i>ACH Transfers</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-apple me-1"></i>Apple Pay</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-google me-1"></i>Google Pay</span>
+                      </div>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="stripeEnabled" style="width: 3em; height: 1.5em;" onchange="handleProviderToggle('stripe')" <%= gateways?.find(g => g.provider === 'stripe')?.isEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <div class="row g-2" id="stripeFields">
+                    <div class="col-md-6">
+                      <label class="form-label small">Publishable Key</label>
+                      <input type="text" class="form-control form-control-sm" id="stripePublishableKey" placeholder="pk_live_... or pk_test_..." value="<%= gateways?.find(g => g.provider === 'stripe')?.publishableKey || '' %>">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Secret Key</label>
+                      <input type="password" class="form-control form-control-sm" id="stripeSecretKey" placeholder="sk_live_... or sk_test_..." autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook Secret</label>
+                      <input type="password" class="form-control form-control-sm" id="stripeWebhookSecret" placeholder="whsec_..." autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook URL</label>
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="stripeWebhookUrl" value="<%= typeof _basePath !== 'undefined' ? _basePath : '' %>/api/webhooks/stripe" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('stripeWebhookUrl')" data-bs-toggle="tooltip" title="Copy URL">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-6 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="stripeTestMode" <%= gateways?.find(g => g.provider === 'stripe')?.testMode ? 'checked' : '' %>>
+                        <label class="form-check-label small" for="stripeTestMode">
+                          <i class="bi bi-bug me-1"></i>Test Mode (use test keys)
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-6 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="stripeAchEnabled" <%= gateways?.find(g => g.provider === 'stripe')?.achEnabled ? 'checked' : '' %>>
+                        <label class="form-check-label small" for="stripeAchEnabled">
+                          <i class="bi bi-bank me-1"></i>Enable ACH Bank Transfers
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PayPal -->
+                <div class="border rounded p-3 mb-3 provider-card <%= gateways?.find(g => g.provider === 'paypal')?.isEnabled ? 'active-provider' : '' %>" id="paypalSection">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1"><i class="bi bi-paypal text-primary me-2" style="font-size: 1.2em;"></i>PayPal</h6>
+                      <small class="text-muted">PayPal Checkout - <a href="https://developer.paypal.com" target="_blank">developer.paypal.com</a></small>
+                      <div class="supported-methods">
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-paypal me-1"></i>PayPal</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-credit-card me-1"></i>Credit Cards</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-wallet2 me-1"></i>Pay Later</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-phone me-1"></i>Venmo</span>
+                      </div>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="paypalEnabled" style="width: 3em; height: 1.5em;" onchange="handleProviderToggle('paypal')" <%= gateways?.find(g => g.provider === 'paypal')?.isEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <div class="row g-2" id="paypalFields">
+                    <div class="col-md-6">
+                      <label class="form-label small">Client ID</label>
+                      <input type="text" class="form-control form-control-sm" id="paypalClientId" placeholder="Client ID from PayPal Developer" value="<%= gateways?.find(g => g.provider === 'paypal')?.publishableKey || '' %>">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Client Secret</label>
+                      <input type="password" class="form-control form-control-sm" id="paypalClientSecret" placeholder="Client Secret" autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook ID</label>
+                      <input type="text" class="form-control form-control-sm" id="paypalWebhookId" placeholder="Webhook ID from PayPal">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook URL</label>
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="paypalWebhookUrl" value="<%= typeof _basePath !== 'undefined' ? _basePath : '' %>/api/webhooks/paypal" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('paypalWebhookUrl')" data-bs-toggle="tooltip" title="Copy URL">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="paypalSandbox" <%= gateways?.find(g => g.provider === 'paypal')?.testMode ? 'checked' : '' %>>
+                        <label class="form-check-label small" for="paypalSandbox">
+                          <i class="bi bi-bug me-1"></i>Sandbox Mode (testing)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Braintree -->
+                <div class="border rounded p-3 mb-3 provider-card <%= gateways?.find(g => g.provider === 'braintree')?.isEnabled ? 'active-provider' : '' %>" id="braintreeSection">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1"><i class="bi bi-credit-card-2-back text-info me-2"></i>Braintree (PayPal)</h6>
+                      <small class="text-muted">Full-stack payments platform - <a href="https://braintreepayments.com" target="_blank">braintreepayments.com</a></small>
+                      <div class="supported-methods">
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-credit-card me-1"></i>Credit Cards</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-paypal me-1"></i>PayPal</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-phone me-1"></i>Venmo</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-apple me-1"></i>Apple Pay</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-google me-1"></i>Google Pay</span>
+                      </div>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="braintreeEnabled" style="width: 3em; height: 1.5em;" onchange="handleProviderToggle('braintree')" <%= gateways?.find(g => g.provider === 'braintree')?.isEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <div class="row g-2" id="braintreeFields">
+                    <div class="col-md-4">
+                      <label class="form-label small">Merchant ID</label>
+                      <input type="text" class="form-control form-control-sm" id="braintreeMerchantId" placeholder="Your Merchant ID" value="<%= gateways?.find(g => g.provider === 'braintree')?.merchantId || '' %>">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small">Public Key</label>
+                      <input type="text" class="form-control form-control-sm" id="braintreePublicKey" placeholder="Public Key" value="<%= gateways?.find(g => g.provider === 'braintree')?.publishableKey || '' %>">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small">Private Key</label>
+                      <input type="password" class="form-control form-control-sm" id="braintreePrivateKey" placeholder="Private Key" autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook URL</label>
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="braintreeWebhookUrl" value="<%= typeof _basePath !== 'undefined' ? _basePath : '' %>/api/webhooks/braintree" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('braintreeWebhookUrl')" data-bs-toggle="tooltip" title="Copy URL">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="braintreeTestMode" <%= gateways?.find(g => g.provider === 'braintree')?.testMode ? 'checked' : '' %>>
+                        <label class="form-check-label small" for="braintreeTestMode">
+                          <i class="bi bi-bug me-1"></i>Sandbox Mode (testing)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Square -->
+                <div class="border rounded p-3 mb-3 provider-card <%= gateways?.find(g => g.provider === 'square')?.isEnabled ? 'active-provider' : '' %>" id="squareSection">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1"><i class="bi bi-square text-dark me-2"></i>Square</h6>
+                      <small class="text-muted">Omnichannel payments - <a href="https://squareup.com" target="_blank">squareup.com</a></small>
+                      <div class="supported-methods">
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-credit-card me-1"></i>Credit Cards</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-wallet2 me-1"></i>Square Wallet</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-cash me-1"></i>Cash App Pay</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-clock me-1"></i>Afterpay</span>
+                      </div>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="squareEnabled" style="width: 3em; height: 1.5em;" onchange="handleProviderToggle('square')" <%= gateways?.find(g => g.provider === 'square')?.isEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <div class="row g-2" id="squareFields">
+                    <div class="col-md-6">
+                      <label class="form-label small">Application ID</label>
+                      <input type="text" class="form-control form-control-sm" id="squareAppId" placeholder="sq0idp-..." value="<%= gateways?.find(g => g.provider === 'square')?.publishableKey || '' %>">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Access Token</label>
+                      <input type="password" class="form-control form-control-sm" id="squareAccessToken" placeholder="Your Access Token" autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Location ID</label>
+                      <input type="text" class="form-control form-control-sm" id="squareLocationId" placeholder="Location ID" value="<%= gateways?.find(g => g.provider === 'square')?.merchantId || '' %>">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook Signature Key</label>
+                      <input type="password" class="form-control form-control-sm" id="squareWebhookSignature" placeholder="Webhook signature key" autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook URL</label>
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="squareWebhookUrl" value="<%= typeof _basePath !== 'undefined' ? _basePath : '' %>/api/webhooks/square" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('squareWebhookUrl')" data-bs-toggle="tooltip" title="Copy URL">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="squareTestMode" <%= gateways?.find(g => g.provider === 'square')?.testMode ? 'checked' : '' %>>
+                        <label class="form-check-label small" for="squareTestMode">
+                          <i class="bi bi-bug me-1"></i>Sandbox Mode (testing)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Authorize.net -->
+                <div class="border rounded p-3 mb-3 provider-card <%= gateways?.find(g => g.provider === 'authorize')?.isEnabled ? 'active-provider' : '' %>" id="authorizeSection">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <h6 class="mb-1"><i class="bi bi-credit-card-2-back text-success me-2"></i>Authorize.net</h6>
+                      <small class="text-muted">Enterprise payment gateway - <a href="https://authorize.net" target="_blank">authorize.net</a></small>
+                      <div class="supported-methods">
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-credit-card me-1"></i>Credit Cards</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-bank me-1"></i>eCheck/ACH</span>
+                        <span class="badge bg-secondary method-badge"><i class="bi bi-apple me-1"></i>Apple Pay</span>
+                      </div>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="authorizeEnabled" style="width: 3em; height: 1.5em;" onchange="handleProviderToggle('authorize')" <%= gateways?.find(g => g.provider === 'authorize')?.isEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+                  <div class="row g-2" id="authorizeFields">
+                    <div class="col-md-6">
+                      <label class="form-label small">API Login ID</label>
+                      <input type="text" class="form-control form-control-sm" id="authorizeApiLoginId" placeholder="API Login ID" value="<%= gateways?.find(g => g.provider === 'authorize')?.publishableKey || '' %>">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Transaction Key</label>
+                      <input type="password" class="form-control form-control-sm" id="authorizeTransactionKey" placeholder="Transaction Key" autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Signature Key (for webhooks)</label>
+                      <input type="password" class="form-control form-control-sm" id="authorizeSignatureKey" placeholder="Signature Key" autocomplete="new-password">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Webhook URL</label>
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="authorizeWebhookUrl" value="<%= typeof _basePath !== 'undefined' ? _basePath : '' %>/api/webhooks/authorize" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('authorizeWebhookUrl')" data-bs-toggle="tooltip" title="Copy URL">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-12 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="authorizeTestMode" <%= gateways?.find(g => g.provider === 'authorize')?.testMode ? 'checked' : '' %>>
+                        <label class="form-check-label small" for="authorizeTestMode">
+                          <i class="bi bi-bug me-1"></i>Sandbox Mode (testing)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Comparison Table -->
+              <div class="table-responsive mt-4 mb-3">
+                <h6><i class="bi bi-table me-2"></i>Provider Comparison</h6>
+                <table class="table table-sm table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Feature</th>
+                      <th class="text-center">Stripe</th>
+                      <th class="text-center">PayPal</th>
+                      <th class="text-center">Braintree</th>
+                      <th class="text-center">Square</th>
+                      <th class="text-center">Authorize.net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Card Processing</td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                    </tr>
+                    <tr>
+                      <td>Apple Pay / Google Pay</td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                    </tr>
+                    <tr>
+                      <td>PayPal</td>
+                      <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                      <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                    </tr>
+                    <tr>
+                      <td>ACH / Bank Transfer</td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                      <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                      <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                      <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                      <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                    </tr>
+                    <tr>
+                      <td>Processing Fee</td>
+                      <td class="text-center">2.9% + 30c</td>
+                      <td class="text-center">2.9% + 30c</td>
+                      <td class="text-center">2.59% + 49c</td>
+                      <td class="text-center">2.6% + 10c</td>
+                      <td class="text-center">2.9% + 30c</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" title="Save payment configuration">
+                <i class="bi bi-check-lg me-1"></i> Save Payment Configuration
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const token = '<%= token %>';
+    const basePath = '<%= typeof _basePath !== "undefined" ? _basePath : "" %>';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+
+      togglePaymentProviders();
+    });
+
+    function copyToClipboard(elementId) {
+      const input = document.getElementById(elementId);
+      navigator.clipboard.writeText(input.value).then(() => {
+        alert('Webhook URL copied to clipboard!');
+      });
+    }
+
+    function togglePaymentProviders() {
+      const enabled = document.getElementById('paymentEnabled').checked;
+      const section = document.getElementById('paymentProvidersSection');
+      if (section) {
+        section.style.opacity = enabled ? '1' : '0.5';
+        section.style.pointerEvents = enabled ? 'auto' : 'none';
+      }
+    }
+
+    function handleProviderToggle(provider) {
+      const providers = ['stripe', 'paypal', 'braintree', 'square', 'authorize'];
+      const currentEnabled = document.getElementById(`${provider}Enabled`).checked;
+
+      providers.forEach(p => {
+        const section = document.getElementById(`${p}Section`);
+        if (currentEnabled && p === provider) {
+          section.classList.add('active-provider');
+        } else if (currentEnabled && p !== provider) {
+          section.classList.remove('active-provider');
+        }
+      });
+    }
+
+    async function testAllConnections() {
+      try {
+        const res = await fetch(`${basePath}/api/payment-gateways/test?token=${token}`);
+        const data = await res.json();
+
+        let message = 'Connection Test Results:\n\n';
+        for (const [provider, result] of Object.entries(data)) {
+          message += `${provider}: ${result.success ? 'Connected' : 'Failed - ' + result.message}\n`;
+        }
+        alert(message);
+      } catch (err) {
+        alert('Error testing connections: ' + err.message);
+      }
+    }
+
+    document.getElementById('paymentGatewayForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        enabled: document.getElementById('paymentEnabled').checked,
+        stripe: {
+          enabled: document.getElementById('stripeEnabled').checked,
+          publishableKey: document.getElementById('stripePublishableKey').value,
+          secretKey: document.getElementById('stripeSecretKey').value,
+          webhookSecret: document.getElementById('stripeWebhookSecret').value,
+          testMode: document.getElementById('stripeTestMode').checked,
+          achEnabled: document.getElementById('stripeAchEnabled').checked
+        },
+        paypal: {
+          enabled: document.getElementById('paypalEnabled').checked,
+          clientId: document.getElementById('paypalClientId').value,
+          clientSecret: document.getElementById('paypalClientSecret').value,
+          webhookId: document.getElementById('paypalWebhookId').value,
+          sandbox: document.getElementById('paypalSandbox').checked
+        },
+        braintree: {
+          enabled: document.getElementById('braintreeEnabled').checked,
+          merchantId: document.getElementById('braintreeMerchantId').value,
+          publicKey: document.getElementById('braintreePublicKey').value,
+          privateKey: document.getElementById('braintreePrivateKey').value,
+          testMode: document.getElementById('braintreeTestMode').checked
+        },
+        square: {
+          enabled: document.getElementById('squareEnabled').checked,
+          appId: document.getElementById('squareAppId').value,
+          accessToken: document.getElementById('squareAccessToken').value,
+          locationId: document.getElementById('squareLocationId').value,
+          webhookSignature: document.getElementById('squareWebhookSignature').value,
+          testMode: document.getElementById('squareTestMode').checked
+        },
+        authorize: {
+          enabled: document.getElementById('authorizeEnabled').checked,
+          apiLoginId: document.getElementById('authorizeApiLoginId').value,
+          transactionKey: document.getElementById('authorizeTransactionKey').value,
+          signatureKey: document.getElementById('authorizeSignatureKey').value,
+          testMode: document.getElementById('authorizeTestMode').checked
+        }
+      };
+
+      try {
+        const res = await fetch(`${basePath}/admin/payment-gateways?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          alert('Payment configuration saved successfully!');
+          window.location.reload();
+        } else {
+          alert('Failed to save payment configuration');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

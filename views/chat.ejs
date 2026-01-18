@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= appName %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: white;
+    }
+    .chat-container {
+      max-width: 750px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-indicator.disconnected { background: #dc3545; }
+    .status-indicator.connected { background: #198754; }
+    .status-indicator.listening { background: #0dcaf0; animation: pulse 1s infinite; }
+    .status-indicator.speaking { background: #ffc107; animation: pulse 0.5s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .mic-button {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      font-size: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .mic-button:hover {
+      transform: scale(1.05);
+    }
+    .mic-button.active {
+      background: #198754 !important;
+      border-color: #198754 !important;
+    }
+    .transcript-box {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .message {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .message.user {
+      background: rgba(13, 110, 253, 0.3);
+      text-align: right;
+    }
+    .message.assistant {
+      background: rgba(25, 135, 84, 0.3);
+    }
+    .visualizer {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .visualizer-bar {
+      width: 4px;
+      background: #0dcaf0;
+      border-radius: 2px;
+      transition: height 0.1s;
+    }
+    .sale-celebration, .sale-denied {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 3rem;
+      border-radius: 20px;
+      text-align: center;
+      z-index: 1000;
+      animation: celebrate 0.5s ease;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .sale-celebration {
+      background: linear-gradient(135deg, #198754 0%, #0a5c36 100%);
+    }
+    .sale-denied {
+      background: linear-gradient(135deg, #dc3545 0%, #8b1a25 100%);
+    }
+    @keyframes celebrate {
+      0% { transform: translate(-50%, -50%) scale(0); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .mode-btn, .difficulty-btn {
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .mode-btn.active {
+      border-color: #0d6efd;
+      background: rgba(13, 110, 253, 0.2) !important;
+    }
+    .difficulty-btn.active {
+      transform: scale(1.05);
+    }
+    .voice-select {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+    }
+    .voice-select option {
+      background: #1a1a2e;
+      color: white;
+    }
+    .mode-indicator {
+      font-size: 0.85rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+    }
+    .collapse-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+    }
+    .collapse-btn:hover {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="text-center mb-4">
+      <h2><i class="bi bi-pen-fill text-primary"></i> <%= appName %></h2>
+      <p class="text-muted">Practice your sales skills with AI - Voice Enabled</p>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Session Settings</h6>
+        <button class="collapse-btn" onclick="toggleSettings()" data-bs-toggle="tooltip" title="Toggle settings panel">
+          <i class="bi bi-chevron-up" id="settingsToggleIcon"></i>
+        </button>
+      </div>
+
+      <div id="settingsContent">
+        <!-- Mode Selection -->
+        <div class="mb-3">
+          <label class="form-label small text-muted">Who's Selling?</label>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-light mode-btn flex-fill" id="modeAiSells" onclick="setMode('ai_sells')" data-bs-toggle="tooltip" title="AI practices selling to you">
+              <i class="bi bi-robot me-1"></i> AI Sells to You
+            </button>
+            <button class="btn btn-outline-light mode-btn flex-fill" id="modeUserSells" onclick="setMode('user_sells')" data-bs-toggle="tooltip" title="You practice selling to the AI">
+              <i class="bi bi-person-fill me-1"></i> You Sell to AI
+            </button>
+          </div>
+        </div>
+
+        <!-- Difficulty (only for user_sells mode) -->
+        <div class="mb-3" id="difficultySection" style="display: none;">
+          <label class="form-label small text-muted">Customer Difficulty</label>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-success difficulty-btn" data-diff="easy" onclick="setDifficulty('easy')" data-bs-toggle="tooltip" title="Friendly customer, few objections">
+              <i class="bi bi-emoji-smile"></i> Easy
+            </button>
+            <button class="btn btn-sm btn-outline-warning difficulty-btn" data-diff="medium" onclick="setDifficulty('medium')" data-bs-toggle="tooltip" title="Some pushback, needs good pitch">
+              <i class="bi bi-emoji-neutral"></i> Medium
+            </button>
+            <button class="btn btn-sm btn-outline-danger difficulty-btn" data-diff="hard" onclick="setDifficulty('hard')" data-bs-toggle="tooltip" title="Skeptical customer, many objections">
+              <i class="bi bi-emoji-frown"></i> Hard
+            </button>
+            <button class="btn btn-sm btn-outline-dark difficulty-btn" data-diff="expert" onclick="setDifficulty('expert')" data-bs-toggle="tooltip" title="Wolf of Wall Street level - nearly impossible!">
+              <i class="bi bi-emoji-angry"></i> Expert
+            </button>
+          </div>
+          <small class="text-muted mt-1 d-block" id="difficultyDesc">How tough is the AI customer?</small>
+        </div>
+
+        <!-- Voice Selection -->
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <label class="form-label small text-muted">AI Voice</label>
+            <select class="form-select form-select-sm voice-select" id="voiceSelect" onchange="setVoice(this.value)">
+              <optgroup label="Male Voices">
+                <option value="ash">Ash - Confident</option>
+                <option value="echo">Echo - Calm</option>
+                <option value="verse">Verse - Dynamic</option>
+              </optgroup>
+              <optgroup label="Female Voices">
+                <option value="alloy">Alloy - Neutral</option>
+                <option value="ballad">Ballad - Warm</option>
+                <option value="coral">Coral - Friendly</option>
+                <option value="sage">Sage - Professional</option>
+                <option value="shimmer">Shimmer - Energetic</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label small text-muted">Current Mode</label>
+            <div>
+              <span class="mode-indicator bg-primary" id="currentModeIndicator">AI Sells</span>
+              <span class="mode-indicator bg-secondary ms-1" id="currentDiffIndicator" style="display: none;">Medium</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary mb-4">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <span class="status-indicator" id="statusIndicator"></span>
+          <span id="statusText">Disconnected</span>
+        </div>
+
+        <div class="visualizer mb-3" id="visualizer"></div>
+
+        <button class="btn btn-primary mic-button mx-auto" id="micButton" disabled data-bs-toggle="tooltip" title="Start/stop voice input">
+          <i class="bi bi-mic-fill"></i>
+        </button>
+        <p class="mt-3 text-muted small">Click to start/stop listening</p>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary mb-4">
+      <div class="card-header">
+        <i class="bi bi-chat-dots"></i> Conversation
+      </div>
+      <div class="card-body">
+        <div class="transcript-box" id="transcript">
+          <p class="text-muted text-center">Connecting to AI Sales Assistant...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+      <div class="card-header">
+        <i class="bi bi-keyboard"></i> Text Input (Alternative)
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <input type="text" class="form-control bg-dark text-white border-secondary"
+                 id="textInput" placeholder="Type a message..." disabled>
+          <button class="btn btn-outline-primary" id="sendButton" disabled data-bs-toggle="tooltip" title="Send message">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <button class="btn btn-success" id="connectButton" data-bs-toggle="tooltip" title="Connect to AI assistant">
+        <i class="bi bi-plug"></i> Connect
+      </button>
+      <button class="btn btn-danger ms-2" id="endButton" disabled data-bs-toggle="tooltip" title="End current session">
+        <i class="bi bi-x-circle"></i> End Session
+      </button>
+    </div>
+  </div>
+
+  <div class="sale-celebration" id="saleCelebration" style="display: none;">
+    <div style="font-size: 4rem;">🎉</div>
+    <h2 id="saleHeadline">SALE MADE!</h2>
+    <p id="saleMessage">Congratulations! You closed the deal!</p>
+    <button class="btn btn-light mt-3" onclick="closePopup()" data-bs-toggle="tooltip" title="Close and continue">Continue</button>
+  </div>
+
+  <div class="sale-denied" id="saleDenied" style="display: none;">
+    <div style="font-size: 4rem;">😔</div>
+    <h2 id="deniedHeadline">SALE DENIED</h2>
+    <p id="deniedMessage">The customer declined. Better luck next time!</p>
+    <button class="btn btn-light mt-3" onclick="closePopup()" data-bs-toggle="tooltip" title="Close and try again">Try Again</button>
+  </div>
+
+  <script>
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    const micButton = document.getElementById('micButton');
+    const transcript = document.getElementById('transcript');
+    const textInput = document.getElementById('textInput');
+    const sendButton = document.getElementById('sendButton');
+    const connectButton = document.getElementById('connectButton');
+    const endButton = document.getElementById('endButton');
+    const visualizer = document.getElementById('visualizer');
+    const saleCelebration = document.getElementById('saleCelebration');
+    const saleDenied = document.getElementById('saleDenied');
+
+    let ws = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let processor = null;
+    let isListening = false;
+
+    // Audio queue for sequential playback
+    let audioQueue = [];
+    let isPlayingAudio = false;
+
+    // Settings state
+    let currentMode = 'ai_sells';
+    let currentDifficulty = 'medium';
+    let currentVoice = 'alloy';
+    let settingsCollapsed = false;
+
+    // Difficulty descriptions
+    const difficultyDescs = {
+      easy: 'Friendly customer, few objections, easy to convince',
+      medium: 'Some pushback, needs good pitch to buy',
+      hard: 'Skeptical customer, many objections, tough sell',
+      expert: '"Wolf of Wall Street" level - nearly impossible!'
+    };
+
+    // Load config on page load
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        if (data.success) {
+          currentMode = data.config.salesMode;
+          currentDifficulty = data.config.difficulty;
+          currentVoice = data.config.selectedVoice;
+          updateSettingsUI();
+        }
+      } catch (err) {
+        console.error('Failed to load config:', err);
+      }
+    }
+
+    function updateSettingsUI() {
+      // Update mode buttons
+      document.getElementById('modeAiSells').classList.toggle('active', currentMode === 'ai_sells');
+      document.getElementById('modeUserSells').classList.toggle('active', currentMode === 'user_sells');
+
+      // Show/hide difficulty section
+      document.getElementById('difficultySection').style.display = currentMode === 'user_sells' ? '' : 'none';
+
+      // Update difficulty buttons
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        const isActive = btn.dataset.diff === currentDifficulty;
+        btn.classList.toggle('active', isActive);
+        if (isActive) {
+          btn.classList.remove('btn-outline-success', 'btn-outline-warning', 'btn-outline-danger', 'btn-outline-dark');
+          btn.classList.add('btn-' + (btn.dataset.diff === 'easy' ? 'success' : btn.dataset.diff === 'medium' ? 'warning' : btn.dataset.diff === 'hard' ? 'danger' : 'dark'));
+        } else {
+          btn.classList.remove('btn-success', 'btn-warning', 'btn-danger', 'btn-dark');
+          btn.classList.add('btn-outline-' + (btn.dataset.diff === 'easy' ? 'success' : btn.dataset.diff === 'medium' ? 'warning' : btn.dataset.diff === 'hard' ? 'danger' : 'dark'));
+        }
+      });
+      document.getElementById('difficultyDesc').textContent = difficultyDescs[currentDifficulty];
+
+      // Update voice select
+      document.getElementById('voiceSelect').value = currentVoice;
+
+      // Update mode indicators
+      document.getElementById('currentModeIndicator').textContent = currentMode === 'ai_sells' ? 'AI Sells' : 'You Sell';
+      document.getElementById('currentModeIndicator').className = 'mode-indicator ' + (currentMode === 'ai_sells' ? 'bg-primary' : 'bg-success');
+
+      document.getElementById('currentDiffIndicator').style.display = currentMode === 'user_sells' ? '' : 'none';
+      document.getElementById('currentDiffIndicator').textContent = currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1);
+      const diffColors = { easy: 'bg-success', medium: 'bg-warning text-dark', hard: 'bg-danger', expert: 'bg-dark' };
+      document.getElementById('currentDiffIndicator').className = 'mode-indicator ms-1 ' + diffColors[currentDifficulty];
+    }
+
+    async function setMode(mode) {
+      currentMode = mode;
+      updateSettingsUI();
+      await saveConfig();
+    }
+
+    async function setDifficulty(difficulty) {
+      currentDifficulty = difficulty;
+      updateSettingsUI();
+      await saveConfig();
+    }
+
+    async function setVoice(voice) {
+      currentVoice = voice;
+      await saveConfig();
+    }
+
+    async function saveConfig() {
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            salesMode: currentMode,
+            difficulty: currentDifficulty,
+            selectedVoice: currentVoice
+          })
+        });
+      } catch (err) {
+        console.error('Failed to save config:', err);
+      }
+    }
+
+    function toggleSettings() {
+      settingsCollapsed = !settingsCollapsed;
+      document.getElementById('settingsContent').style.display = settingsCollapsed ? 'none' : '';
+      document.getElementById('settingsToggleIcon').className = 'bi bi-chevron-' + (settingsCollapsed ? 'down' : 'up');
+    }
+
+    // Load config when page loads
+    loadConfig();
+
+    // Create visualizer bars
+    for (let i = 0; i < 20; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'visualizer-bar';
+      bar.style.height = '4px';
+      visualizer.appendChild(bar);
+    }
+    const bars = visualizer.querySelectorAll('.visualizer-bar');
+
+    function setStatus(status, text) {
+      statusIndicator.className = 'status-indicator ' + status;
+      statusText.textContent = text;
+    }
+
+    function addMessage(text, role) {
+      if (transcript.querySelector('.text-muted')) {
+        transcript.innerHTML = '';
+      }
+      const lastMessage = transcript.lastElementChild;
+      if (lastMessage && lastMessage.classList.contains(role)) {
+        lastMessage.textContent += text;
+      } else {
+        const div = document.createElement('div');
+        div.className = 'message ' + role;
+        div.textContent = text;
+        transcript.appendChild(div);
+      }
+      transcript.scrollTop = transcript.scrollHeight;
+    }
+
+    function showCelebration(headline, message) {
+      document.getElementById('saleHeadline').textContent = headline || 'SALE MADE!';
+      document.getElementById('saleMessage').textContent = message || 'Congratulations! You closed the deal!';
+      saleCelebration.style.display = 'block';
+    }
+
+    function showDenied(headline, message) {
+      document.getElementById('deniedHeadline').textContent = headline || 'SALE DENIED';
+      document.getElementById('deniedMessage').textContent = message || 'The customer declined. Better luck next time!';
+      saleDenied.style.display = 'block';
+    }
+
+    function closePopup() {
+      saleCelebration.style.display = 'none';
+      saleDenied.style.display = 'none';
+    }
+
+    async function connect() {
+      transcript.innerHTML = '<p class="text-muted text-center">Connecting...</p>';
+
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new AudioContext({ sampleRate: 24000 });
+
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
+
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setStatus('connected', 'Connected');
+          micButton.disabled = false;
+          textInput.disabled = false;
+          sendButton.disabled = false;
+          endButton.disabled = false;
+          connectButton.textContent = 'Disconnect';
+          connectButton.className = 'btn btn-warning';
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          console.log('Received:', data.type);
+
+          switch (data.type) {
+            case 'ready':
+              transcript.innerHTML = '';
+              break;
+
+            case 'audio':
+              if (isListening) stopListening();
+              setStatus('speaking', 'AI Speaking...');
+              queueAudio(data.audio);
+              break;
+
+            case 'assistant_transcript':
+              addMessage(data.text, 'assistant');
+              break;
+
+            case 'user_transcript':
+              addMessage(data.text, 'user');
+              break;
+
+            case 'sale_made':
+              showCelebration(data.headline, data.message);
+              break;
+
+            case 'sale_denied':
+              showDenied(data.headline, data.message);
+              break;
+
+            case 'error':
+              console.error('Error:', data.message);
+              addMessage('Error: ' + data.message, 'assistant');
+              break;
+          }
+        };
+
+        ws.onclose = () => disconnect();
+        ws.onerror = (err) => {
+          console.error('WebSocket error:', err);
+          disconnect();
+        };
+
+      } catch (err) {
+        console.error('Connection error:', err);
+        alert('Failed to connect. Make sure microphone is allowed.');
+      }
+    }
+
+    function disconnect() {
+      if (ws) { ws.close(); ws = null; }
+      if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+      if (audioContext) { audioContext.close(); audioContext = null; }
+      if (processor) { processor.disconnect(); processor = null; }
+
+      isListening = false;
+      isPlayingAudio = false;
+      audioQueue = [];
+      micButton.disabled = true;
+      micButton.classList.remove('active');
+      textInput.disabled = true;
+      sendButton.disabled = true;
+      endButton.disabled = true;
+      setStatus('disconnected', 'Disconnected');
+      connectButton.textContent = 'Connect';
+      connectButton.className = 'btn btn-success';
+    }
+
+    function startListening() {
+      if (!audioContext || !mediaStream || !ws) return;
+
+      isListening = true;
+      micButton.classList.add('active');
+      setStatus('listening', 'Listening...');
+
+      const source = audioContext.createMediaStreamSource(mediaStream);
+      processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      processor.onaudioprocess = (e) => {
+        if (!isListening || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+        const inputData = e.inputBuffer.getChannelData(0);
+
+        // Update visualizer
+        let sum = 0;
+        for (let i = 0; i < inputData.length; i++) sum += Math.abs(inputData[i]);
+        const avg = sum / inputData.length;
+        bars.forEach(bar => {
+          bar.style.height = Math.min(60, Math.max(4, avg * 500 * (1 + Math.random() * 0.5))) + 'px';
+        });
+
+        // Send audio
+        const pcm16 = floatTo16BitPCM(inputData);
+        const base64 = arrayBufferToBase64(pcm16.buffer);
+        ws.send(JSON.stringify({ type: 'audio', audio: base64 }));
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+    }
+
+    function stopListening() {
+      isListening = false;
+      micButton.classList.remove('active');
+      if (processor) { processor.disconnect(); processor = null; }
+      bars.forEach(bar => bar.style.height = '4px');
+      if (!isPlayingAudio) setStatus('connected', 'Connected');
+    }
+
+    function floatTo16BitPCM(float32Array) {
+      const buffer = new Int16Array(float32Array.length);
+      for (let i = 0; i < float32Array.length; i++) {
+        const s = Math.max(-1, Math.min(1, float32Array[i]));
+        buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return buffer;
+    }
+
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function queueAudio(base64Audio) {
+      const binaryString = atob(base64Audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const int16Array = new Int16Array(bytes.buffer);
+      const float32Array = new Float32Array(int16Array.length);
+      for (let i = 0; i < int16Array.length; i++) {
+        float32Array[i] = int16Array[i] / 32768.0;
+      }
+
+      audioQueue.push(float32Array);
+      if (!isPlayingAudio) playNextAudio();
+    }
+
+    function playNextAudio() {
+      if (audioQueue.length === 0) {
+        isPlayingAudio = false;
+        setStatus('listening', 'Listening...');
+        startListening();
+        return;
+      }
+
+      isPlayingAudio = true;
+      const audioData = audioQueue.shift();
+
+      const audioBuffer = audioContext.createBuffer(1, audioData.length, 24000);
+      audioBuffer.copyToChannel(audioData, 0);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      source.onended = playNextAudio;
+      source.start();
+    }
+
+    function sendText() {
+      const text = textInput.value.trim();
+      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+      addMessage(text, 'user');
+      ws.send(JSON.stringify({ type: 'text', text }));
+      textInput.value = '';
+    }
+
+    // Event listeners
+    connectButton.addEventListener('click', () => {
+      if (ws) disconnect();
+      else connect();
+    });
+
+    micButton.addEventListener('click', () => {
+      if (isListening) stopListening();
+      else startListening();
+    });
+
+    sendButton.addEventListener('click', sendText);
+    textInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendText();
+    });
+
+    endButton.addEventListener('click', () => {
+      closePopup();
+      disconnect();
+    });
+
+    setStatus('disconnected', 'Disconnected');
+
+    // Initialize Bootstrap tooltips
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

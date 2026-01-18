@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gift Orders - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .bulk-actions { display: none; background: #e3f2fd; padding: 0.75rem 1rem; border-radius: 8px; align-items: center; gap: 0.5rem; }
+    .bulk-actions.show { display: flex; }
+    .row-checkbox { cursor: pointer; width: 18px; height: 18px; }
+    tr.selected { background-color: #cfe2ff !important; }
+    tr.selected td { background-color: #cfe2ff !important; }
+    tbody tr:hover { background-color: #f8f9fa; }
+    tbody tr.selected:hover { background-color: #b6d4fe !important; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'gift-orders' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-bag-heart text-danger me-2"></i>Gift Orders</h2>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOrderModal">
+            <i class="bi bi-plus-lg"></i> New Order
+          </button>
+        </div>
+
+        <!-- Quick Order Buttons -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <button class="btn btn-outline-danger w-100 py-3" onclick="quickOrder('flowers')" data-bs-toggle="tooltip" title="Order flowers quickly">
+              <i class="bi bi-flower1 d-block mb-2" style="font-size: 1.5rem;"></i>
+              Order Flowers
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-warning w-100 py-3" onclick="quickOrder('gift-card')" data-bs-toggle="tooltip" title="Send a gift card">
+              <i class="bi bi-gift d-block mb-2" style="font-size: 1.5rem;"></i>
+              Gift Card
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-info w-100 py-3" onclick="quickOrder('jewelry')" data-bs-toggle="tooltip" title="Browse jewelry options">
+              <i class="bi bi-gem d-block mb-2" style="font-size: 1.5rem;"></i>
+              Jewelry
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-success w-100 py-3" onclick="quickOrder('experience')" data-bs-toggle="tooltip" title="Book an experience">
+              <i class="bi bi-star d-block mb-2" style="font-size: 1.5rem;"></i>
+              Experience
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+              <div class="card-body">
+                <h6><i class="bi bi-hourglass-split"></i> Pending</h6>
+                <h3 class="mb-0"><%= pendingCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-truck"></i> Shipped</h6>
+                <h3 class="mb-0"><%= shippedCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-check-circle"></i> Delivered</h6>
+                <h3 class="mb-0"><%= deliveredCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-primary text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-currency-dollar"></i> Total Spent</h6>
+                <h3 class="mb-0">$<%= (totalSpent || 0).toLocaleString('en-US', {minimumFractionDigits: 2}) %></h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="bulk-actions mb-3" id="bulkActions">
+          <span class="me-3"><strong id="selectedCount">0</strong> selected</span>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteSelected()" data-bs-toggle="tooltip" title="Delete selected orders">
+            <i class="bi bi-trash"></i> Delete Selected
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input" id="selectAll" data-bs-toggle="tooltip" title="Select all">
+                  </th>
+                  <th>Gift</th>
+                  <th>Recipient</th>
+                  <th>Occasion</th>
+                  <th>Vendor</th>
+                  <th>Amount</th>
+                  <th>Delivery Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <% if (orders && orders.length > 0) { %>
+                  <% orders.forEach(order => { %>
+                  <tr>
+                    <td><input type="checkbox" class="form-check-input row-checkbox" data-id="<%= order.id %>"></td>
+                    <td>
+                      <i class="bi bi-<%= order.orderType === 'flowers' ? 'flower1 text-danger' : order.orderType === 'jewelry' ? 'gem text-info' : order.orderType === 'gift-card' ? 'gift text-warning' : order.orderType === 'experience' ? 'star text-success' : 'bag text-primary' %>"></i>
+                      <strong><%= order.giftName %></strong>
+                      <% if (order.description) { %>
+                        <br><small class="text-muted"><%= order.description.substring(0, 40) %><%= order.description.length > 40 ? '...' : '' %></small>
+                      <% } %>
+                    </td>
+                    <td><%= order.recipientName %></td>
+                    <td>
+                      <span class="badge bg-<%= order.occasion === 'birthday' ? 'primary' : order.occasion === 'anniversary' ? 'danger' : order.occasion === 'christmas' ? 'success' : order.occasion === 'valentines' ? 'pink' : 'secondary' %>">
+                        <%= order.occasion.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) %>
+                      </span>
+                    </td>
+                    <td><%= order.vendor || '-' %></td>
+                    <td><strong>$<%= order.amount.toFixed(2) %></strong></td>
+                    <td>
+                      <% if (order.deliveryDate) { %>
+                        <%= new Date(order.deliveryDate).toLocaleDateString() %>
+                      <% } else { %>
+                        -
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="badge bg-<%= order.status === 'delivered' ? 'success' : order.status === 'shipped' ? 'info' : order.status === 'ordered' ? 'primary' : order.status === 'cancelled' ? 'danger' : 'warning text-dark' %>">
+                        <%= order.status.charAt(0).toUpperCase() + order.status.slice(1) %>
+                      </span>
+                      <% if (order.trackingNumber) { %>
+                        <br><small><a href="#" onclick="trackPackage('<%= order.trackingNumber %>')"><i class="bi bi-box-seam"></i> Track</a></small>
+                      <% } %>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" onclick="viewOrder('<%= order.id %>')" data-bs-toggle="tooltip" title="View order details">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-secondary" onclick="editOrder('<%= order.id %>')" data-bs-toggle="tooltip" title="Edit order">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deleteOrder('<%= order.id %>')" data-bs-toggle="tooltip" title="Delete order">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <% }) %>
+                <% } else { %>
+                <tr>
+                  <td colspan="9" class="text-center py-5">
+                    <i class="bi bi-bag-heart text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">No Gift Orders Yet</h5>
+                    <p class="text-muted">Order flowers, jewelry, or other gifts for your wife!</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOrderModal">
+                      <i class="bi bi-plus-lg"></i> Place First Order
+                    </button>
+                  </td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <div class="text-muted small">Showing <span id="showingStart">1</span>-<span id="showingEnd"><%= orders?.length || 0 %></span> of <span id="totalRows"><%= orders?.length || 0 %></span></div>
+            <nav>
+              <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+            </nav>
+            <select class="form-select form-select-sm" id="pageSize" style="width: auto;">
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Order Modal -->
+  <div class="modal fade" id="addOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bag-plus me-2"></i>New Gift Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="addOrderForm">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Recipient Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="recipientName" placeholder="e.g., Wife" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Occasion <span class="text-danger">*</span></label>
+                <select class="form-select" name="occasion" required>
+                  <option value="birthday">Birthday</option>
+                  <option value="anniversary">Anniversary</option>
+                  <option value="christmas">Christmas</option>
+                  <option value="valentines">Valentine's Day</option>
+                  <option value="mothers-day">Mother's Day</option>
+                  <option value="just-because">Just Because</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label class="form-label">Gift Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="giftName" placeholder="e.g., Red Roses Bouquet" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Type</label>
+                <select class="form-select" name="orderType">
+                  <option value="flowers">Flowers</option>
+                  <option value="jewelry">Jewelry</option>
+                  <option value="gift-card">Gift Card</option>
+                  <option value="product">Product</option>
+                  <option value="experience">Experience</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Vendor</label>
+                <input type="text" class="form-control" name="vendor" placeholder="e.g., 1-800-Flowers">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Amount <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" class="form-control" name="amount" step="0.01" min="0" required>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Delivery Date</label>
+                <input type="date" class="form-control" name="deliveryDate">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description / Notes</label>
+              <textarea class="form-control" name="description" rows="2" placeholder="Special instructions, message to include, etc."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Create Order</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Order Modal -->
+  <div class="modal fade" id="editOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Gift Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="editOrderForm">
+          <input type="hidden" name="id" id="editOrderId">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Recipient Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="recipientName" id="editRecipientName" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Occasion</label>
+                <select class="form-select" name="occasion" id="editOccasion">
+                  <option value="birthday">Birthday</option>
+                  <option value="anniversary">Anniversary</option>
+                  <option value="christmas">Christmas</option>
+                  <option value="valentines">Valentine's Day</option>
+                  <option value="mothers-day">Mother's Day</option>
+                  <option value="just-because">Just Because</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label class="form-label">Gift Name</label>
+                <input type="text" class="form-control" name="giftName" id="editGiftName">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status" id="editStatus">
+                  <option value="pending">Pending</option>
+                  <option value="ordered">Ordered</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Vendor</label>
+                <input type="text" class="form-control" name="vendor" id="editVendor">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" class="form-control" name="amount" id="editAmount" step="0.01" min="0">
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Delivery Date</label>
+                <input type="date" class="form-control" name="deliveryDate" id="editDeliveryDate">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Tracking Number</label>
+              <input type="text" class="form-control" name="trackingNumber" id="editTrackingNumber">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea class="form-control" name="notes" id="editNotes" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Order</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <%- include('_table-controls') %>
+  <script>
+    const token = '<%= token %>';
+    const basePath = '<%= typeof basePath !== "undefined" ? basePath : "" %>';
+    let tableControls;
+    const prefillItem = <%- typeof prefillItem !== 'undefined' && prefillItem ? JSON.stringify(prefillItem) : 'null' %>;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize table controls with pagination and selection
+      tableControls = new TableControls();
+
+      // If we have a prefill item from wishlist, open modal and fill form
+      if (prefillItem) {
+        const form = document.getElementById('addOrderForm');
+        if (form) {
+          form.querySelector('[name="recipientName"]').value = 'Wife';
+          form.querySelector('[name="giftName"]').value = prefillItem.name || '';
+          form.querySelector('[name="description"]').value = prefillItem.description || '';
+          form.querySelector('[name="occasion"]').value = prefillItem.occasion || 'just-because';
+
+          // Map wishlist category to order type
+          const categoryMap = {
+            'jewelry': 'jewelry',
+            'experiences': 'experience',
+            'electronics': 'product',
+            'clothing': 'product',
+            'home': 'product',
+            'beauty': 'product',
+            'books': 'product',
+            'general': 'product'
+          };
+          form.querySelector('[name="orderType"]').value = categoryMap[prefillItem.category] || 'product';
+
+          // Parse price range if available
+          if (prefillItem.priceRange) {
+            const match = prefillItem.priceRange.match(/\$?(\d+)/);
+            if (match) {
+              form.querySelector('[name="amount"]').value = match[1];
+            }
+          }
+        }
+        new bootstrap.Modal(document.getElementById('addOrderModal')).show();
+      }
+
+      document.getElementById('addOrderForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+          const res = await fetch(`${basePath}/admin/gift-orders?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            location.reload();
+          } else {
+            alert('Failed to create order');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+
+      document.getElementById('editOrderForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editOrderId').value;
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+          const res = await fetch(`${basePath}/admin/gift-orders/${id}?token=${token}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            location.reload();
+          } else {
+            alert('Failed to update order');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+    });
+
+    function getSelectedIds() {
+      return tableControls ? tableControls.getSelectedIds() : [];
+    }
+
+    function quickOrder(type) {
+      document.querySelector('[name="orderType"]').value = type;
+      new bootstrap.Modal(document.getElementById('addOrderModal')).show();
+    }
+
+    function trackPackage(trackingNumber) {
+      alert(`Tracking: ${trackingNumber}\n\nIntegration with shipping carriers coming soon!`);
+    }
+
+    async function viewOrder(id) {
+      try {
+        const res = await fetch(`${basePath}/admin/gift-orders/${id}/edit?token=${token}`);
+        const data = await res.json();
+        if (data.success && data.order) {
+          const o = data.order;
+          // Show order details in an alert (or could create a view modal)
+          let details = `Order Details:\n\n`;
+          details += `Gift: ${o.giftName || 'N/A'}\n`;
+          details += `Recipient: ${o.recipientName || 'N/A'}\n`;
+          details += `Occasion: ${o.occasion || 'N/A'}\n`;
+          details += `Vendor: ${o.vendor || 'N/A'}\n`;
+          details += `Amount: $${o.amount || 0}\n`;
+          details += `Status: ${o.status || 'N/A'}\n`;
+          details += `Delivery Date: ${o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : 'N/A'}\n`;
+          details += `Tracking: ${o.trackingNumber || 'N/A'}\n`;
+          details += `Notes: ${o.notes || o.description || 'N/A'}`;
+          alert(details);
+        } else {
+          alert('Failed to load order');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function editOrder(id) {
+      try {
+        const res = await fetch(`${basePath}/admin/gift-orders/${id}/edit?token=${token}`);
+        const data = await res.json();
+        if (data.success && data.order) {
+          const o = data.order;
+          document.getElementById('editOrderId').value = o.id;
+          document.getElementById('editRecipientName').value = o.recipientName || '';
+          document.getElementById('editOccasion').value = o.occasion || 'birthday';
+          document.getElementById('editGiftName').value = o.giftName || '';
+          document.getElementById('editStatus').value = o.status || 'pending';
+          document.getElementById('editVendor').value = o.vendor || '';
+          document.getElementById('editAmount').value = o.amount || '';
+          document.getElementById('editDeliveryDate').value = o.deliveryDate ? o.deliveryDate.split('T')[0] : '';
+          document.getElementById('editTrackingNumber').value = o.trackingNumber || '';
+          document.getElementById('editNotes').value = o.notes || '';
+          new bootstrap.Modal(document.getElementById('editOrderModal')).show();
+        } else {
+          alert('Failed to load order');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteSelected() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      if (!confirm(`Delete ${ids.length} order(s)?`)) return;
+
+      try {
+        const res = await fetch(`${basePath}/admin/gift-orders/bulk-delete?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteOrder(id) {
+      if (!confirm('Delete this order?')) return;
+      try {
+        const res = await fetch(`${basePath}/admin/gift-orders/${id}?token=${token}`, { method: 'DELETE' });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #8e2de2 0%, #e91e63 100%);
+      --primary-dark: #7b27c9;
+      --secondary-pink: #e91e63;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Announcement Bar */
+    .announcement-bar {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 8px 0;
+      font-size: 0.9rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .announcement-bar .carousel-item {
+      text-align: center;
+    }
+    .announcement-bar a {
+      color: #ffeb3b;
+      text-decoration: underline;
+    }
+    .announcement-bar a:hover {
+      color: #fff;
+    }
+    .announcement-bar .bi-x-lg {
+      cursor: pointer;
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.7;
+    }
+    .announcement-bar .bi-x-lg:hover {
+      opacity: 1;
+    }
+
+    /* Navigation */
+    .navbar {
+      background: white !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: var(--primary-dark) !important;
+    }
+    .navbar-brand i {
+      color: var(--secondary-pink);
+    }
+    .btn-login {
+      background: transparent;
+      border: 2px solid var(--secondary-pink);
+      color: var(--secondary-pink);
+    }
+    .btn-login:hover {
+      background: var(--secondary-pink);
+      color: white;
+    }
+    .btn-signup {
+      background: var(--primary-gradient);
+      border: none;
+      color: white;
+    }
+    .btn-signup:hover {
+      background: linear-gradient(135deg, #7b27c9 0%, #c91854 100%);
+      color: white;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 80px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .hero-subtitle {
+      font-size: 1.5rem;
+      opacity: 0.9;
+      margin-bottom: 2rem;
+    }
+    .hero-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .hero-feature {
+      background: rgba(255,255,255,0.15);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+    .hero-feature i {
+      margin-right: 5px;
+    }
+    .hero-cta .btn {
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      border-radius: 25px;
+    }
+    .btn-hero-primary {
+      background: white;
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    .btn-hero-primary:hover {
+      background: #f8f9fa;
+      color: var(--secondary-pink);
+    }
+    .btn-hero-secondary {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+    .btn-hero-secondary:hover {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    .hero-image {
+      text-align: center;
+    }
+    .hero-image i {
+      font-size: 15rem;
+      opacity: 0.3;
+    }
+
+    /* Banner Ads Section */
+    .banner-ads {
+      background: #f8f9fa;
+      padding: 20px 0;
+    }
+    .banner-ad-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .banner-ad-card:hover {
+      transform: translateY(-3px);
+    }
+    .banner-ad-img {
+      width: 80px;
+      height: 60px;
+      background: #e9ecef;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #6c757d;
+    }
+    .banner-ad-content h6 {
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .banner-ad-content small {
+      color: #6c757d;
+    }
+    .ad-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      background: #f1f1f1;
+      color: #999;
+      border-radius: 3px;
+    }
+
+    /* Features Section */
+    .features-section {
+      padding: 80px 0;
+    }
+    .feature-card {
+      text-align: center;
+      padding: 30px;
+      border-radius: 15px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      background: white;
+      height: 100%;
+    }
+    .feature-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    }
+    .feature-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 2rem;
+      color: white;
+    }
+    .feature-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    /* Sidebar Ads Section */
+    .sidebar-ads-section {
+      padding: 60px 0;
+      background: #f8f9fa;
+    }
+    .sidebar-ad-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      height: 100%;
+    }
+    .sidebar-ad-card:hover {
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      transform: translateY(-5px);
+    }
+    .sidebar-ad-img {
+      width: 100%;
+      height: 120px;
+      background: #e9ecef;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      font-size: 3rem;
+      color: #6c757d;
+    }
+    .sidebar-ad-card h6 {
+      margin-bottom: 5px;
+    }
+    .sidebar-ad-card .btn {
+      margin-top: 10px;
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      background: #e9ecef;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: var(--primary-gradient);
+      padding: 60px 0;
+      color: white;
+      text-align: center;
+    }
+    .cta-section h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    .cta-section p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-bottom: 30px;
+    }
+    .cta-section .btn {
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 30px;
+      background: white;
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    .cta-section .btn:hover {
+      background: #f8f9fa;
+      color: var(--secondary-pink);
+    }
+
+    /* Footer */
+    .footer {
+      background: #2c3e50;
+      color: white;
+      padding: 40px 0 20px;
+    }
+    .footer h5 {
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    .footer a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .footer a:hover {
+      color: white;
+    }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 20px;
+      margin-top: 30px;
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Category Icons */
+    .cat-hunting { color: #8B4513; }
+    .cat-fishing { color: #1E90FF; }
+    .cat-tools { color: #FFD700; }
+    .cat-survival { color: #228B22; }
+    .cat-diy { color: #FF6347; }
+    .cat-trucks { color: #333; }
+
+    /* Pricing Section */
+    .pricing-section {
+      padding: 80px 0;
+      background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+    }
+    .pricing-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .pricing-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    .pricing-card.popular {
+      border: 3px solid var(--secondary-pink);
+    }
+    .pricing-card.popular::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: 15px;
+      right: -35px;
+      background: var(--secondary-pink);
+      color: white;
+      padding: 5px 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      transform: rotate(45deg);
+    }
+    .pricing-tier {
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+    }
+    .pricing-price {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #333;
+    }
+    .pricing-price span {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #6c757d;
+    }
+    .pricing-features {
+      list-style: none;
+      padding: 0;
+      margin: 25px 0;
+    }
+    .pricing-features li {
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f1f1;
+      display: flex;
+      align-items: center;
+    }
+    .pricing-features li:last-child {
+      border-bottom: none;
+    }
+    .pricing-features li i {
+      color: #22c55e;
+      margin-right: 10px;
+    }
+    .pricing-features li.disabled {
+      color: #adb5bd;
+    }
+    .pricing-features li.disabled i {
+      color: #adb5bd;
+    }
+    .btn-pricing {
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-weight: 600;
+      width: 100%;
+    }
+    .btn-pricing-primary {
+      background: var(--primary-gradient);
+      border: none;
+      color: white;
+    }
+    .btn-pricing-primary:hover {
+      background: linear-gradient(135deg, #7b27c9 0%, #c91854 100%);
+      color: white;
+    }
+    .btn-pricing-outline {
+      background: transparent;
+      border: 2px solid var(--secondary-pink);
+      color: var(--secondary-pink);
+    }
+    .btn-pricing-outline:hover {
+      background: var(--secondary-pink);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Announcement Bar -->
+  <% if (announcements && announcements.length > 0) { %>
+  <div class="announcement-bar" id="announcementBar">
+    <div class="container">
+      <div id="announcementCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner">
+          <% announcements.forEach((ad, index) => { %>
+          <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+            <i class="bi bi-megaphone me-2"></i>
+            <%= ad.title %> - <%= ad.description %>
+            <% if (ad.linkUrl) { %>
+            <a href="<%= ad.linkUrl %>" target="_blank">Shop Now <i class="bi bi-arrow-right"></i></a>
+            <% } %>
+          </div>
+          <% }); %>
+        </div>
+      </div>
+      <i class="bi bi-x-lg" onclick="document.getElementById('announcementBar').style.display='none'"></i>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <i class="bi bi-heart-fill me-2"></i>Nagging Wife AI
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#features">Features</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#pricing">Pricing</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#deals">Deals</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#about">About</a>
+          </li>
+        </ul>
+        <div class="d-flex gap-2">
+          <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/login" class="btn btn-login">Sign In</a>
+          <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register" class="btn btn-signup">Get Started</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-7">
+          <h1 class="hero-title">Never Forget Another Anniversary</h1>
+          <p class="hero-subtitle">Happy Wife, Happy Life - Your AI-powered assistant for remembering important dates, gift ideas, and honey-do's</p>
+          <div class="hero-features">
+            <span class="hero-feature"><i class="bi bi-calendar-heart"></i> Important Dates</span>
+            <span class="hero-feature"><i class="bi bi-gift"></i> Gift Ideas</span>
+            <span class="hero-feature"><i class="bi bi-list-check"></i> Honey-Do Lists</span>
+            <span class="hero-feature"><i class="bi bi-bell"></i> Smart Reminders</span>
+            <span class="hero-feature"><i class="bi bi-bag-heart"></i> Order Gifts</span>
+          </div>
+          <div class="hero-cta">
+            <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register" class="btn btn-hero-primary me-3">Start Free Trial</a>
+            <a href="#pricing" class="btn btn-hero-secondary">See Pricing</a>
+          </div>
+        </div>
+        <div class="col-lg-5 hero-image d-none d-lg-block">
+          <% if (heroAd && heroAd.imageUrl) { %>
+          <img src="<%= heroAd.imageUrl %>" alt="<%= heroAd.title %>" class="img-fluid rounded" style="max-height: 400px;">
+          <% } else { %>
+          <i class="bi bi-heart-fill"></i>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Banner Ads -->
+  <% if (bannerAds && bannerAds.length > 0) { %>
+  <section class="banner-ads">
+    <div class="container">
+      <div class="row g-3">
+        <% bannerAds.forEach(ad => { %>
+        <div class="col-md-6">
+          <a href="<%= ad.linkUrl || '#' %>" class="text-decoration-none" target="_blank">
+            <div class="banner-ad-card">
+              <div class="banner-ad-img">
+                <% if (ad.imageUrl) { %>
+                <img src="<%= ad.imageUrl %>" alt="<%= ad.title %>" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                <% } else { %>
+                <i class="bi bi-<%= ad.category === 'cars-trucks' ? 'truck' : ad.category === 'sports' ? 'trophy' : 'tag' %>"></i>
+                <% } %>
+              </div>
+              <div class="banner-ad-content">
+                <h6><%= ad.title %></h6>
+                <small><%= ad.description %></small>
+              </div>
+              <span class="ad-badge ms-auto">AD</span>
+            </div>
+          </a>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+  </section>
+  <% } %>
+
+  <!-- Features Section -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Why Choose Nagging Wife AI?</h2>
+        <p class="text-muted">Because every husband needs a little help sometimes</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi bi-calendar-heart"></i>
+            </div>
+            <h4 class="feature-title">Important Date Tracking</h4>
+            <p class="text-muted">Never forget birthdays, anniversaries, or special occasions again. Get timely reminders with gift suggestions.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi bi-gift"></i>
+            </div>
+            <h4 class="feature-title">Smart Gift Suggestions</h4>
+            <p class="text-muted">Track her wishlist and get AI-powered gift recommendations for every occasion and budget.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi bi-list-check"></i>
+            </div>
+            <h4 class="feature-title">Honey-Do Management</h4>
+            <p class="text-muted">Organize your chores and household tasks with priority levels and helpful reminders.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi bi-flower1"></i>
+            </div>
+            <h4 class="feature-title">One-Click Ordering</h4>
+            <p class="text-muted">Order flowers and gifts directly through the app with delivery tracking and reminders.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi bi-bell"></i>
+            </div>
+            <h4 class="feature-title">Adjustable Nagging</h4>
+            <p class="text-muted">Choose your reminder intensity - from gentle nudges to full nag mode. We've got you covered.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi bi-translate"></i>
+            </div>
+            <h4 class="feature-title">24 Languages</h4>
+            <p class="text-muted">Available in 24 languages so you can keep your wife happy no matter where you are.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Simple, Honest Pricing</h2>
+        <p class="text-muted">Start free, upgrade when you're ready. Cancel anytime.</p>
+      </div>
+      <div class="row g-4 justify-content-center">
+        <!-- Free Plan -->
+        <div class="col-lg-3 col-md-6">
+          <div class="pricing-card">
+            <div class="pricing-tier text-muted">Free</div>
+            <div class="pricing-price">$0<span>/mo</span></div>
+            <p class="text-muted">Perfect for trying it out</p>
+            <ul class="pricing-features">
+              <li><i class="bi bi-check-circle-fill"></i> 5 Important Dates</li>
+              <li><i class="bi bi-check-circle-fill"></i> 10 Wishlist Items</li>
+              <li><i class="bi bi-check-circle-fill"></i> Basic Reminders</li>
+              <li><i class="bi bi-check-circle-fill"></i> Email Notifications</li>
+              <li class="disabled"><i class="bi bi-x-circle"></i> SMS Reminders</li>
+              <li class="disabled"><i class="bi bi-x-circle"></i> Gift Ordering</li>
+            </ul>
+            <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register?plan=free" class="btn btn-pricing btn-pricing-outline">Get Started Free</a>
+          </div>
+        </div>
+        <!-- Plus Plan -->
+        <div class="col-lg-3 col-md-6">
+          <div class="pricing-card popular">
+            <div class="pricing-tier" style="color: var(--secondary-pink);">Plus</div>
+            <div class="pricing-price">$9.99<span>/mo</span></div>
+            <p class="text-muted">For the forgetful husband</p>
+            <ul class="pricing-features">
+              <li><i class="bi bi-check-circle-fill"></i> Unlimited Dates</li>
+              <li><i class="bi bi-check-circle-fill"></i> Unlimited Wishlist</li>
+              <li><i class="bi bi-check-circle-fill"></i> Smart AI Reminders</li>
+              <li><i class="bi bi-check-circle-fill"></i> Email + SMS Alerts</li>
+              <li><i class="bi bi-check-circle-fill"></i> Gift Ordering</li>
+              <li><i class="bi bi-check-circle-fill"></i> Adjustable Nag Level</li>
+            </ul>
+            <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register?plan=plus" class="btn btn-pricing btn-pricing-primary">Start Free Trial</a>
+          </div>
+        </div>
+        <!-- Family Plan -->
+        <div class="col-lg-3 col-md-6">
+          <div class="pricing-card">
+            <div class="pricing-tier text-primary">Family</div>
+            <div class="pricing-price">$19.99<span>/mo</span></div>
+            <p class="text-muted">Track the whole family</p>
+            <ul class="pricing-features">
+              <li><i class="bi bi-check-circle-fill"></i> Everything in Plus</li>
+              <li><i class="bi bi-check-circle-fill"></i> Up to 5 Family Members</li>
+              <li><i class="bi bi-check-circle-fill"></i> Shared Calendars</li>
+              <li><i class="bi bi-check-circle-fill"></i> Kids' Events Tracking</li>
+              <li><i class="bi bi-check-circle-fill"></i> Family Gift Budget</li>
+              <li><i class="bi bi-check-circle-fill"></i> Priority Support</li>
+            </ul>
+            <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register?plan=family" class="btn btn-pricing btn-pricing-outline">Start Free Trial</a>
+          </div>
+        </div>
+        <!-- Premium Plan -->
+        <div class="col-lg-3 col-md-6">
+          <div class="pricing-card">
+            <div class="pricing-tier" style="color: #8e2de2;">Premium</div>
+            <div class="pricing-price">$29.99<span>/mo</span></div>
+            <p class="text-muted">The ultimate peace of mind</p>
+            <ul class="pricing-features">
+              <li><i class="bi bi-check-circle-fill"></i> Everything in Family</li>
+              <li><i class="bi bi-check-circle-fill"></i> Unlimited Members</li>
+              <li><i class="bi bi-check-circle-fill"></i> Voice AI Assistant</li>
+              <li><i class="bi bi-check-circle-fill"></i> Auto Gift Selection</li>
+              <li><i class="bi bi-check-circle-fill"></i> Concierge Service</li>
+              <li><i class="bi bi-check-circle-fill"></i> White-Glove Onboarding</li>
+            </ul>
+            <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register?plan=premium" class="btn btn-pricing btn-pricing-outline">Contact Sales</a>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-5">
+        <p class="text-muted"><i class="bi bi-shield-check me-2"></i>14-day free trial on all paid plans. No credit card required to start.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sidebar Ads Section - Guy Stuff -->
+  <% if (sidebarAds && sidebarAds.length > 0) { %>
+  <section class="sidebar-ads-section" id="deals">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Deals for the Guys</h2>
+        <p class="text-muted">While you're being a good husband, check out these deals</p>
+      </div>
+      <div class="row g-4">
+        <% sidebarAds.forEach(ad => { %>
+        <div class="col-md-4 col-sm-6">
+          <div class="sidebar-ad-card">
+            <div class="sidebar-ad-img">
+              <% if (ad.imageUrl) { %>
+              <img src="<%= ad.imageUrl %>" alt="<%= ad.title %>" style="width: 100%; height: 100%; object-fit: contain;">
+              <% } else { %>
+              <i class="bi bi-<%= ad.category === 'hunting' ? 'bullseye cat-hunting' : ad.category === 'fishing' ? 'water cat-fishing' : ad.category === 'tools' ? 'wrench cat-tools' : ad.category === 'survival' ? 'tree cat-survival' : ad.category === 'diy' ? 'hammer cat-diy' : ad.category === 'cars-trucks' ? 'truck cat-trucks' : 'tag' %>"></i>
+              <% } %>
+            </div>
+            <span class="category-badge"><%= ad.category %></span>
+            <h6><%= ad.title %></h6>
+            <small class="text-muted d-block mb-2"><%= ad.description %></small>
+            <% if (ad.advertiser) { %>
+            <small class="text-muted"><%= ad.advertiser %></small>
+            <% } %>
+            <% if (ad.linkUrl) { %>
+            <a href="<%= ad.linkUrl %>" target="_blank" class="btn btn-sm btn-outline-primary w-100">View Deal</a>
+            <% } %>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+  </section>
+  <% } %>
+
+  <!-- About Section -->
+  <section class="py-5" id="about">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h2 class="fw-bold mb-4">Built by Husbands, for Husbands</h2>
+          <p class="lead text-muted">We've all been there - forgetting an anniversary, scrambling for a last-minute gift, or hearing "you never remember anything." That's why we created Nagging Wife AI.</p>
+          <p class="text-muted">Our AI assistant remembers everything so you don't have to. From tracking her wishlist to reminding you about chores, we've got your back. Because a happy wife really does mean a happy life.</p>
+          <div class="d-flex gap-4 mt-4">
+            <div class="text-center">
+              <h3 class="fw-bold text-primary mb-0">10K+</h3>
+              <small class="text-muted">Happy Husbands</small>
+            </div>
+            <div class="text-center">
+              <h3 class="fw-bold text-primary mb-0">50K+</h3>
+              <small class="text-muted">Dates Saved</small>
+            </div>
+            <div class="text-center">
+              <h3 class="fw-bold text-primary mb-0">99%</h3>
+              <small class="text-muted">Happier Wives</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 text-center">
+          <div class="p-5 bg-light rounded-4">
+            <i class="bi bi-heart-fill text-danger" style="font-size: 8rem; opacity: 0.3;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Be a Better Husband?</h2>
+      <p>Start your free trial today - no credit card required</p>
+      <a href="<%= typeof basePath !== 'undefined' ? basePath : '' %>/auth/register" class="btn">Get Started Free <i class="bi bi-arrow-right ms-2"></i></a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h5><i class="bi bi-heart-fill text-danger me-2"></i>Nagging Wife AI</h5>
+          <p class="text-muted">Happy Wife, Happy Life</p>
+          <p class="text-muted small">The AI assistant that helps you be the husband she deserves.</p>
+        </div>
+        <div class="col-md-2">
+          <h5>Product</h5>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#deals">Deals</a>
+        </div>
+        <div class="col-md-2">
+          <h5>Support</h5>
+          <a href="#">Help Center</a>
+          <a href="#">Contact Us</a>
+          <a href="#">FAQ</a>
+        </div>
+        <div class="col-md-2">
+          <h5>Legal</h5>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+        </div>
+        <div class="col-md-2">
+          <h5>Connect</h5>
+          <a href="#"><i class="bi bi-facebook me-2"></i>Facebook</a>
+          <a href="#"><i class="bi bi-twitter me-2"></i>Twitter</a>
+          <a href="#"><i class="bi bi-instagram me-2"></i>Instagram</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Nagging Wife AI. All rights reserved. Made with <i class="bi bi-heart-fill text-danger"></i> for husbands everywhere.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

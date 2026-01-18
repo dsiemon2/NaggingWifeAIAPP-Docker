@@ -1,0 +1,744 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ROLE ENUM
+// ============================================
+
+enum UserRole {
+  SUPER_ADMIN  // Platform owner - full system access
+  GROUP_ADMIN  // Family account owner (subscriber who pays)
+  PARTNER      // Spouse with full family access
+  MEMBER       // Kids/relatives - limited access
+}
+
+// ============================================
+// GROUP LEVEL - Multi-tenant (Family Groups)
+// ============================================
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String   @unique
+  settings    Json     @default("{}")
+  isActive    Boolean  @default(true)
+  planType    String   @default("free") // free, plus, family, premium
+  planExpires DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  payments    Payment[] @relation("GroupPayments")
+}
+
+// ============================================
+// UNIFIED USER MODEL
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique  // Global unique for SUPER_ADMIN support
+  username  String?  // Optional username for login
+  password  String
+  name      String
+  role      UserRole @default(MEMBER)
+  isActive  Boolean  @default(true)
+  groupId   String?  // Null for SUPER_ADMIN (platform level)
+  group     Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Profile info
+  birthDate DateTime? // For age verification (18+ for billing access)
+  phone     String?
+  avatarUrl String?
+
+  // Email verification
+  emailVerified            Boolean   @default(false)
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+
+  // Password reset
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+
+  // OAuth providers
+  googleId    String?
+  microsoftId String?
+  appleId     String?
+
+  // Session tracking
+  lastLoginAt DateTime?
+  lastLoginIp String?
+
+  // Auth sessions
+  sessions    AuthSession[]
+
+  // Account settings
+  paymentMethods    UserPaymentMethod[]
+  notificationPrefs UserNotificationPreference?
+  devices           UserDevice[]
+
+  @@index([groupId])
+  @@index([email])
+  @@index([emailVerificationToken])
+  @@index([passwordResetToken])
+}
+
+// ============================================
+// AUTH SESSIONS
+// ============================================
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// ============================================
+// IMPORTANT DATES (Birthdays, Anniversaries, etc.)
+// ============================================
+
+model ImportantDate {
+  id          String   @id @default(cuid())
+  title       String   // e.g., "Wife's Birthday", "Wedding Anniversary"
+  dateType    String   @default("birthday") // birthday, anniversary, holiday, custom
+  person      String?  // e.g., "Wife", "Mom", "Dad"
+  date        DateTime
+  recurring   Boolean  @default(true)
+  reminderDays Int     @default(7) // Days before to remind
+  notes       String?  @db.Text
+  giftIdeas   Json     @default("[]") // JSON array of gift ideas
+  isActive    Boolean  @default(true)
+  groupId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([dateType])
+  @@index([date])
+  @@index([groupId])
+}
+
+// ============================================
+// WIFE'S WISHLIST
+// ============================================
+
+model WishlistItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  category    String   @default("general") // jewelry, clothing, electronics, home, experiences, etc.
+  priority    String   @default("normal") // low, normal, high, must-have
+  priceRange  String?  // e.g., "$50-100"
+  productUrl  String?
+  imageUrl    String?
+  occasion    String?  // birthday, christmas, anniversary, just-because
+  isPurchased Boolean  @default(false)
+  purchasedAt DateTime?
+  notes       String?  @db.Text
+  isActive    Boolean  @default(true)
+  groupId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([priority])
+  @@index([occasion])
+  @@index([groupId])
+}
+
+// ============================================
+// CHORES & HONEY-DO'S
+// ============================================
+
+model Chore {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?   @db.Text
+  category     String    @default("general") // household, yard, repair, errand, project
+  priority     String    @default("normal") // low, normal, high, urgent
+  status       String    @default("pending") // pending, in_progress, completed, cancelled
+  dueDate      DateTime?
+  reminderDate DateTime?
+  recurring    String?   // daily, weekly, monthly, yearly, null for one-time
+  estimatedTime Int?     // Minutes
+  assignedTo   String?   // Who should do it
+  completedAt  DateTime?
+  notes        String?   @db.Text
+  isActive     Boolean   @default(true)
+  groupId      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([category])
+  @@index([groupId])
+}
+
+// ============================================
+// GIFT ORDERS
+// ============================================
+
+model GiftOrder {
+  id            String   @id @default(cuid())
+  recipientName String
+  occasion      String   // birthday, anniversary, christmas, valentines, mothers-day, just-because
+  giftName      String
+  description   String?  @db.Text
+  vendor        String?  // 1800flowers, Amazon, etc.
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  orderType     String   @default("flowers") // flowers, jewelry, gift-card, product, experience
+  status        String   @default("pending") // pending, ordered, shipped, delivered, cancelled
+  trackingNumber String?
+  deliveryDate  DateTime?
+  orderDate     DateTime?
+  transactionId String?
+  notes         String?  @db.Text
+  groupId       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([occasion])
+  @@index([deliveryDate])
+  @@index([groupId])
+}
+
+// ============================================
+// SEASONAL REMINDERS
+// ============================================
+
+model SeasonalReminder {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  season      String   // christmas, valentines, mothers-day, birthday, anniversary, easter, thanksgiving, new-year
+  reminderDays Int     @default(14) // Days before to start reminding
+  message     String?  @db.Text // Custom reminder message
+  giftSuggestions Json @default("[]") // JSON array of gift suggestions
+  adCategory  String?  // Category of ads to show
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([season])
+}
+
+// ============================================
+// ADS MANAGEMENT (Regular Guy Ads)
+// ============================================
+
+model Ad {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // hunting, fishing, tools, survival, diy, cars-trucks, sports, seasonal
+  imageUrl    String?
+  linkUrl     String?
+  advertiser  String?
+  startDate   DateTime?
+  endDate     DateTime?
+  priority    Int      @default(0)
+  placement   String   @default("sidebar") // announcement-bar, banner, sidebar, hero
+  clickCount  Int      @default(0)
+  impressions Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([placement])
+  @@index([isActive])
+}
+
+// ============================================
+// PAYMENT GATEWAY CONFIGURATION
+// ============================================
+
+model PaymentGateway {
+  id                  String   @id @default(cuid())
+  provider            String   @default("stripe") // stripe, paypal, braintree, square, authorize
+  isEnabled           Boolean  @default(false)
+  testMode            Boolean  @default(true)
+
+  // Stripe fields
+  publishableKey      String?
+  secretKey           String?
+  webhookSecret       String?
+  achEnabled          Boolean  @default(false)
+
+  // PayPal fields
+  clientId            String?
+  clientSecret        String?
+  webhookId           String?
+
+  // Braintree fields
+  merchantId          String?
+  publicKey           String?
+  privateKey          String?
+
+  // Square fields
+  applicationId       String?
+  accessToken         String?
+  locationId          String?
+  webhookSignatureKey String?
+
+  // Authorize.net fields
+  apiLoginId          String?
+  transactionKey      String?
+  signatureKey        String?
+
+  additionalConfig    Json     @default("{}") // JSON for provider-specific settings
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([provider])
+}
+
+// ============================================
+// APP CONFIGURATION
+// ============================================
+
+model AppConfig {
+  id                   String   @id @default(cuid())
+  appName              String   @default("Nagging Wife AI")
+  selectedVoice        String   @default("nova")
+  assistantMode        String   @default("helpful") // helpful, firm, gentle, nagging
+  maxSessionMins       Int      @default(30)
+  transcriptionEnabled Boolean  @default(true)
+  autoSummaryEnabled   Boolean  @default(true)
+  primaryLanguage      String   @default("en")
+  greeting             String?  // Custom greeting message
+  notificationsEnabled Boolean  @default(true)
+  reminderFrequency    String   @default("daily") // hourly, daily, weekly
+  updatedAt            DateTime @updatedAt
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // CREATE, UPDATE, DELETE, VIEW, LOGIN, LOGOUT
+  entity    String   // User, Group, etc.
+  entityId  String?
+  userId    String?
+  groupId   String?
+  details   Json     @default("{}") // JSON additional details
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([groupId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================
+// AI AGENTS
+// ============================================
+
+model AIAgent {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?  @db.Text
+  systemPrompt String?  @db.Text
+  model        String   @default("gpt-4o-realtime")
+  voice        String   @default("alloy")
+  temperature  Float    @default(0.7)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ============================================
+// AI TOOLS
+// ============================================
+
+model AITool {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  type        String   @default("function") // function, api, webhook
+  schema      Json     @default("{}") // JSON schema
+  endpoint    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// WEBHOOKS
+// ============================================
+
+model Webhook {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  events    Json     @default("[]") // JSON array of event types
+  secret    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// SMS SETTINGS
+// ============================================
+
+model SMSSettings {
+  id             String   @id @default(cuid())
+  provider       String   @default("twilio") // twilio, vonage, etc.
+  accountSid     String?
+  authToken      String?
+  fromNumber     String?
+  enableReminders Boolean @default(true)
+  reminderHours  Int      @default(24)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================
+// CALL TRANSFER
+// ============================================
+
+model CallTransfer {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  phoneNumber String
+  sipUri      String?
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// DTMF MENU
+// ============================================
+
+model DTMFMenu {
+  id        String   @id @default(cuid())
+  name      String
+  digit     String   // 0-9, *, #
+  action    String   // transfer, repeat, skip, end
+  targetId  String?  // Reference to target (e.g., transfer number)
+  prompt    String?  // Voice prompt to play
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// LOGIC RULES
+// ============================================
+
+model LogicRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  trigger     String   // event that triggers the rule
+  conditions  Json     @default("[]") // JSON array of conditions
+  actions     Json     @default("[]") // JSON array of actions
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// FUNCTIONS (Custom Code)
+// ============================================
+
+model Function {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  code        String   @db.Text // JavaScript code
+  parameters  Json     @default("[]") // JSON array of parameters
+  returnType  String   @default("void")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// PAYMENTS
+// ============================================
+
+model Payment {
+  id            String   @id @default(cuid())
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  status        String   @default("pending") // pending, completed, failed, refunded
+  method        String?  // card, bank, paypal
+  transactionId String?
+  description   String?  @db.Text
+  groupId       String?
+  group         Group?   @relation("GroupPayments", fields: [groupId], references: [id], onDelete: SetNull)
+  userId        String?  // Track who made the payment
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================
+// LANGUAGES
+// ============================================
+
+model Language {
+  id          String   @id @default(cuid())
+  code        String   @unique // en, es, fr, de, etc.
+  name        String   // English, Spanish, French, etc.
+  nativeName  String   // English, Español, Français, etc.
+  flag        String   @default("🌐") // Emoji flag
+  enabled     Boolean  @default(true)
+  docCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================
+// SESSIONS (Nagging Check-ins)
+// ============================================
+
+model Session {
+  id          String   @id @default(cuid())
+  name        String   // User's name
+  email       String?
+  topic       String   @default("general") // chores, gifts, dates, general
+  status      String   @default("scheduled") // scheduled, in_progress, completed, cancelled
+  scheduledAt DateTime?
+  completedAt DateTime?
+  score       Float?   // Performance score 1-10
+  notes       String?  @db.Text
+  transcript  Json     @default("[]") // JSON array of messages
+  summary     String?  @db.Text // AI-generated summary
+  duration    Int?     // Duration in minutes
+  groupId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([topic])
+  @@index([status])
+}
+
+// ============================================
+// BRANDING & SETTINGS
+// ============================================
+
+model Branding {
+  id              String   @id @default(cuid())
+  logoUrl         String   @default("")
+  faviconUrl      String   @default("")
+  primaryColor    String   @default("#9333ea") // Purple
+  secondaryColor  String   @default("#7e22ce")
+  accentColor     String   @default("#a855f7")
+  headingFont     String   @default("Inter")
+  bodyFont        String   @default("Inter")
+  updatedAt       DateTime @updatedAt
+}
+
+model StoreInfo {
+  id              String   @id @default(cuid())
+  businessName    String   @default("Nagging Wife AI")
+  tagline         String   @default("Your Helpful Reminder Assistant")
+  description     String   @default("AI assistant that helps husbands remember important dates, chores, and gifts")
+  address         String   @default("")
+  phone           String   @default("")
+  email           String   @default("")
+  website         String   @default("")
+  businessHours   String   @default("")
+  timezone        String   @default("America/New_York")
+  updatedAt       DateTime @updatedAt
+}
+
+model Features {
+  id                      String   @id @default(cuid())
+  faqEnabled              Boolean  @default(false)
+  stickyBarEnabled        Boolean  @default(false)
+  stickyBarText           String   @default("")
+  stickyBarBgColor        String   @default("#9333ea")
+  stickyBarLink           String   @default("")
+  stickyBarLinkText       String   @default("")
+  liveChatEnabled         Boolean  @default(false)
+  chatProvider            String   @default("builtin")
+  chatWelcomeMessage      String   @default("Hi! How can we help you today?")
+  chatAgentName           String   @default("Support")
+  chatWidgetColor         String   @default("#9333ea")
+  chatPosition            String   @default("bottom-right")
+  chatShowOnMobile        Boolean  @default(true)
+  chatWidgetId            String   @default("")
+  chatEmbedCode           String   @default("")
+  emailNotifications      Boolean  @default(true)
+  smsNotifications        Boolean  @default(false)
+  pushNotifications       Boolean  @default(false)
+  orderConfirmations      Boolean  @default(true)
+  marketingEmails         Boolean  @default(false)
+  appointmentReminders    Boolean  @default(true)
+  facebookEnabled         Boolean  @default(false)
+  facebookUrl             String   @default("")
+  twitterEnabled          Boolean  @default(false)
+  twitterUrl              String   @default("")
+  instagramEnabled        Boolean  @default(false)
+  instagramUrl            String   @default("")
+  linkedinEnabled         Boolean  @default(false)
+  linkedinUrl             String   @default("")
+  youtubeEnabled          Boolean  @default(false)
+  youtubeUrl              String   @default("")
+  tiktokEnabled           Boolean  @default(false)
+  tiktokUrl               String   @default("")
+  shareOnFacebook         Boolean  @default(true)
+  shareOnTwitter          Boolean  @default(true)
+  shareOnLinkedin         Boolean  @default(false)
+  shareOnWhatsapp         Boolean  @default(true)
+  shareOnEmail            Boolean  @default(true)
+  copyLinkButton          Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
+}
+
+model PaymentSettings {
+  id                      String   @id @default(cuid())
+  enabled                 Boolean  @default(false)
+  // Stripe
+  stripeEnabled           Boolean  @default(false)
+  stripePublishableKey    String   @default("")
+  stripeSecretKey         String   @default("")
+  stripeTestMode          Boolean  @default(true)
+  stripeWebhookSecret     String   @default("")
+  // PayPal
+  paypalEnabled           Boolean  @default(false)
+  paypalClientId          String   @default("")
+  paypalClientSecret      String   @default("")
+  paypalSandbox           Boolean  @default(true)
+  paypalWebhookId         String   @default("")
+  // Square
+  squareEnabled           Boolean  @default(false)
+  squareAppId             String   @default("")
+  squareAccessToken       String   @default("")
+  squareLocationId        String   @default("")
+  squareSandbox           Boolean  @default(true)
+  squareWebhookSignature  String   @default("")
+  // Braintree
+  braintreeEnabled        Boolean  @default(false)
+  braintreeMerchantId     String   @default("")
+  braintreePublicKey      String   @default("")
+  braintreePrivateKey     String   @default("")
+  braintreeTestMode       Boolean  @default(true)
+  // Authorize.net
+  authorizeEnabled        Boolean  @default(false)
+  authorizeApiLoginId     String   @default("")
+  authorizeTransactionKey String   @default("")
+  authorizeTestMode       Boolean  @default(true)
+  authorizeSignatureKey   String   @default("")
+  updatedAt               DateTime @updatedAt
+}
+
+// ============================================
+// USER ACCOUNT SETTINGS MODELS
+// ============================================
+
+model UserPaymentMethod {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isDefault          Boolean   @default(false)
+  cardType           String    // Visa, Mastercard, Amex, Discover
+  cardLast4          String    // Last 4 digits
+  cardHolderName     String
+  expiryMonth        Int
+  expiryYear         Int
+
+  // Gateway reference
+  gateway            String?   // stripe, paypal, braintree, etc.
+  gatewayCustomerId  String?
+  gatewayPaymentMethodId String?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model UserNotificationPreference {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Family reminder notifications
+  importantDatesEmail      Boolean   @default(true)
+  importantDatesSms        Boolean   @default(true)
+  importantDatesPush       Boolean   @default(true)
+
+  choresEmail              Boolean   @default(true)
+  choresSms                Boolean   @default(false)
+  choresPush               Boolean   @default(true)
+
+  wishlistEmail            Boolean   @default(true)
+  wishlistSms              Boolean   @default(false)
+  wishlistPush             Boolean   @default(true)
+
+  giftOrdersEmail          Boolean   @default(true)
+  giftOrdersSms            Boolean   @default(false)
+  giftOrdersPush           Boolean   @default(false)
+
+  // Payment notifications
+  paymentEmail             Boolean   @default(true)
+  paymentSms               Boolean   @default(false)
+  paymentPush              Boolean   @default(false)
+
+  // Security notifications
+  securityEmail            Boolean   @default(true)
+  securitySms              Boolean   @default(true)
+  securityPush             Boolean   @default(true)
+
+  updatedAt          DateTime  @updatedAt
+}
+
+model UserDevice {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deviceName         String?
+  deviceType         String    @default("desktop")
+  osName             String?
+  osVersion          String?
+  browser            String?
+  ipAddress          String?
+
+  isCurrent          Boolean   @default(false)
+  lastSeenAt         DateTime  @default(now())
+
+  createdAt          DateTime  @default(now())
+
+  @@index([userId])
+}

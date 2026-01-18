@@ -1,0 +1,51 @@
+--- a/prisma/seed.ts
++++ b/prisma/seed.ts
+@@ -349,29 +349,7 @@ async function main() {
+   }
+   console.log('Created AI tools');
+
+-  // ==============================
+-  // VOICES
+-  // ==============================
+-  const voices = [
+-    { voiceId: 'alloy', name: 'Alloy', description: 'Neutral, balanced voice', gender: 'neutral', accent: 'American', provider: 'openai', isDefault: true },
+-    { voiceId: 'echo', name: 'Echo', description: 'Clear male voice', gender: 'male', accent: 'American', provider: 'openai' },
+-    { voiceId: 'fable', name: 'Fable', description: 'British accent voice', gender: 'male', accent: 'British', provider: 'openai' },
+-    { voiceId: 'onyx', name: 'Onyx', description: 'Deep, authoritative voice', gender: 'male', accent: 'American', provider: 'openai' },
+-    { voiceId: 'nova', name: 'Nova', description: 'Warm female voice', gender: 'female', accent: 'American', provider: 'openai' },
+-    { voiceId: 'shimmer', name: 'Shimmer', description: 'Soft, friendly voice', gender: 'female', accent: 'American', provider: 'openai' },
+-  ];
+-
+-  for (const voice of voices) {
+-    await prisma.voice.upsert({
+-      where: { voiceId: voice.voiceId },
+-      update: {},
+-      create: voice,
+-    });
+-  }
+-  console.log('Created voices');
+-
+   // ==============================
+   // LANGUAGES
+   // ==============================
+-  const languages = [
+-    { code: 'en-US', name: 'English (US)', nativeName: 'English', voiceSupport: true, sttSupport: true, ttsSupport: true, isDefault: true, isActive: true },
+-    { code: 'en-GB', name: 'English (UK)', nativeName: 'English', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: true },
+-    { code: 'es-ES', name: 'Spanish', nativeName: 'Espanol', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: true },
+-    { code: 'fr-FR', name: 'French', nativeName: 'Francais', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: false },
+-    { code: 'de-DE', name: 'German', nativeName: 'Deutsch', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: false },
+-    { code: 'pt-BR', name: 'Portuguese (Brazil)', nativeName: 'Portugues', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: false },
+-    { code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: 'Zhongwen', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: false },
+-    { code: 'ja-JP', name: 'Japanese', nativeName: 'Nihongo', voiceSupport: true, sttSupport: true, ttsSupport: true, isActive: false },
++  const seedLanguages = [
++    { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸', enabled: true },
++    { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', enabled: true },
++    { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', enabled: false },
++    { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', enabled: false },
+   ];
+
+-  for (const lang of languages) {
++  for (const lang of seedLanguages) {
+     await prisma.language.upsert({
+       where: { code: lang.code },
+       update: {},

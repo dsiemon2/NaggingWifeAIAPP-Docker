@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chores & Honey-Do's - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .bulk-actions { display: none; background: #e3f2fd; padding: 0.75rem 1rem; border-radius: 8px; align-items: center; gap: 0.5rem; }
+    .bulk-actions.show { display: flex; }
+    .row-checkbox { cursor: pointer; width: 18px; height: 18px; }
+    tr.selected { background-color: #cfe2ff !important; }
+    tr.selected td { background-color: #cfe2ff !important; }
+    tbody tr:hover { background-color: #f8f9fa; }
+    tbody tr.selected:hover { background-color: #b6d4fe !important; }
+    .priority-urgent { border-left: 4px solid #dc3545 !important; }
+    .priority-high { border-left: 4px solid #fd7e14 !important; }
+    .overdue-row { background-color: #f8d7da !important; }
+    .completed-row { opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'chores' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-list-check text-primary me-2"></i>Chores & Honey-Do's</h2>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChoreModal">
+            <i class="bi bi-plus-lg"></i> Add Chore
+          </button>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="mb-4">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active" onclick="filterStatus('all')">All</button>
+            <button type="button" class="btn btn-outline-warning" onclick="filterStatus('pending')"><i class="bi bi-hourglass"></i> Pending</button>
+            <button type="button" class="btn btn-outline-info" onclick="filterStatus('in_progress')"><i class="bi bi-arrow-repeat"></i> In Progress</button>
+            <button type="button" class="btn btn-outline-success" onclick="filterStatus('completed')"><i class="bi bi-check-circle"></i> Completed</button>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-danger text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-exclamation-triangle"></i> Overdue</h6>
+                <h3 class="mb-0"><%= overdueCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+              <div class="card-body">
+                <h6><i class="bi bi-hourglass-split"></i> Pending</h6>
+                <h3 class="mb-0"><%= pendingCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-arrow-repeat"></i> In Progress</h6>
+                <h3 class="mb-0"><%= inProgressCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-check-circle"></i> Completed</h6>
+                <h3 class="mb-0"><%= completedCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="bulk-actions mb-3" id="bulkActions">
+          <span class="me-3"><strong id="selectedCount">0</strong> selected</span>
+          <button class="btn btn-sm btn-outline-success me-2" onclick="markComplete()" data-bs-toggle="tooltip" title="Mark as completed">
+            <i class="bi bi-check-circle"></i> Mark Complete
+          </button>
+          <button class="btn btn-sm btn-outline-info me-2" onclick="markInProgress()" data-bs-toggle="tooltip" title="Mark as in progress">
+            <i class="bi bi-arrow-repeat"></i> In Progress
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteSelected()" data-bs-toggle="tooltip" title="Delete selected chores">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input" id="selectAll" data-bs-toggle="tooltip" title="Select all">
+                  </th>
+                  <th>Chore</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                  <th>Assigned To</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <% if (chores && chores.length > 0) { %>
+                  <% chores.forEach(chore => {
+                    const isOverdue = chore.dueDate && new Date(chore.dueDate) < new Date() && chore.status !== 'completed';
+                  %>
+                  <tr class="<%= chore.priority === 'urgent' ? 'priority-urgent' : chore.priority === 'high' ? 'priority-high' : '' %> <%= isOverdue ? 'overdue-row' : '' %> <%= chore.status === 'completed' ? 'completed-row' : '' %>">
+                    <td><input type="checkbox" class="form-check-input row-checkbox" data-id="<%= chore.id %>"></td>
+                    <td>
+                      <strong><%= chore.title %></strong>
+                      <% if (chore.description) { %>
+                        <br><small class="text-muted"><%= chore.description.substring(0, 60) %><%= chore.description.length > 60 ? '...' : '' %></small>
+                      <% } %>
+                      <% if (chore.recurring) { %>
+                        <br><span class="badge bg-light text-dark"><i class="bi bi-arrow-repeat"></i> <%= chore.recurring %></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="badge bg-secondary">
+                        <i class="bi bi-<%= chore.category === 'household' ? 'house' : chore.category === 'yard' ? 'tree' : chore.category === 'repair' ? 'tools' : chore.category === 'errand' ? 'car-front' : chore.category === 'project' ? 'hammer' : 'list' %>"></i>
+                        <%= chore.category.charAt(0).toUpperCase() + chore.category.slice(1) %>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge bg-<%= chore.priority === 'urgent' ? 'danger' : chore.priority === 'high' ? 'warning text-dark' : chore.priority === 'low' ? 'secondary' : 'info' %>">
+                        <% if (chore.priority === 'urgent') { %><i class="bi bi-exclamation-circle"></i> <% } %>
+                        <%= chore.priority.charAt(0).toUpperCase() + chore.priority.slice(1) %>
+                      </span>
+                    </td>
+                    <td>
+                      <% if (chore.dueDate) { %>
+                        <% if (isOverdue) { %>
+                          <span class="text-danger"><i class="bi bi-exclamation-triangle"></i> <%= new Date(chore.dueDate).toLocaleDateString() %></span>
+                        <% } else { %>
+                          <%= new Date(chore.dueDate).toLocaleDateString() %>
+                        <% } %>
+                      <% } else { %>
+                        -
+                      <% } %>
+                      <% if (chore.estimatedTime) { %>
+                        <br><small class="text-muted"><i class="bi bi-clock"></i> ~<%= chore.estimatedTime %> min</small>
+                      <% } %>
+                    </td>
+                    <td><%= chore.assignedTo || 'Unassigned' %></td>
+                    <td>
+                      <span class="badge bg-<%= chore.status === 'completed' ? 'success' : chore.status === 'in_progress' ? 'info' : chore.status === 'cancelled' ? 'secondary' : 'warning text-dark' %>">
+                        <i class="bi bi-<%= chore.status === 'completed' ? 'check-circle' : chore.status === 'in_progress' ? 'arrow-repeat' : chore.status === 'cancelled' ? 'x-circle' : 'hourglass-split' %>"></i>
+                        <%= chore.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) %>
+                      </span>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" onclick="editChore('<%= chore.id %>')" data-bs-toggle="tooltip" title="Edit chore">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <% if (chore.status !== 'completed') { %>
+                      <button class="btn btn-sm btn-outline-success" onclick="markSingleComplete('<%= chore.id %>')" data-bs-toggle="tooltip" title="Mark complete">
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                      <% } %>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deleteChore('<%= chore.id %>')" data-bs-toggle="tooltip" title="Delete chore">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <% }) %>
+                <% } else { %>
+                <tr>
+                  <td colspan="8" class="text-center py-5">
+                    <i class="bi bi-list-check text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">No Chores Yet</h5>
+                    <p class="text-muted">Add chores and honey-do's to keep track of tasks!</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChoreModal">
+                      <i class="bi bi-plus-lg"></i> Add First Chore
+                    </button>
+                  </td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <div class="text-muted small">Showing <span id="showingStart">1</span>-<span id="showingEnd"><%= chores?.length || 0 %></span> of <span id="totalRows"><%= chores?.length || 0 %></span></div>
+            <nav>
+              <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+            </nav>
+            <select class="form-select form-select-sm" id="pageSize" style="width: auto;">
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Chore Modal -->
+  <div class="modal fade" id="addChoreModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-list-check me-2"></i>Add Chore / Honey-Do</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="addChoreForm">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="title" placeholder="e.g., Fix the leaky faucet" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" name="description" rows="2" placeholder="Additional details..."></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category">
+                  <option value="general">General</option>
+                  <option value="household">Household</option>
+                  <option value="yard">Yard Work</option>
+                  <option value="repair">Repairs</option>
+                  <option value="errand">Errands</option>
+                  <option value="project">Projects</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Priority</label>
+                <select class="form-select" name="priority">
+                  <option value="low">Low</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Assigned To</label>
+                <input type="text" class="form-control" name="assignedTo" placeholder="e.g., Husband">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Due Date</label>
+                <input type="date" class="form-control" name="dueDate">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Reminder Date</label>
+                <input type="date" class="form-control" name="reminderDate">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Estimated Time (min)</label>
+                <input type="number" class="form-control" name="estimatedTime" placeholder="e.g., 30">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Recurring</label>
+              <select class="form-select" name="recurring">
+                <option value="">One-time task</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Chore</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Chore Modal -->
+  <div class="modal fade" id="editChoreModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Chore</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="editChoreForm">
+          <input type="hidden" name="id" id="editChoreId">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="title" id="editTitle" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" name="description" id="editDescription" rows="2"></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category" id="editCategory">
+                  <option value="general">General</option>
+                  <option value="household">Household</option>
+                  <option value="yard">Yard Work</option>
+                  <option value="repair">Repairs</option>
+                  <option value="errand">Errands</option>
+                  <option value="project">Projects</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Priority</label>
+                <select class="form-select" name="priority" id="editPriority">
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status" id="editStatus">
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Assigned To</label>
+                <input type="text" class="form-control" name="assignedTo" id="editAssignedTo">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Due Date</label>
+                <input type="date" class="form-control" name="dueDate" id="editDueDate">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Estimated Time (min)</label>
+                <input type="number" class="form-control" name="estimatedTime" id="editEstimatedTime">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea class="form-control" name="notes" id="editNotes" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Chore</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <%- include('_table-controls') %>
+  <script>
+    const token = '<%= token %>';
+    let tableControls;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize table controls with pagination and selection
+      tableControls = new TableControls();
+
+      document.getElementById('addChoreForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+          const res = await fetch(`/admin/chores?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            location.reload();
+          } else {
+            alert('Failed to save chore');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+
+      document.getElementById('editChoreForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editChoreId').value;
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+          const res = await fetch(`/admin/chores/${id}?token=${token}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            location.reload();
+          } else {
+            alert('Failed to update chore');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+    });
+
+    function getSelectedIds() {
+      return tableControls ? tableControls.getSelectedIds() : [];
+    }
+
+    function filterStatus(status) {
+      window.location.href = `/admin/chores?token=${token}&status=${status}`;
+    }
+
+    async function markComplete() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+
+      try {
+        const res = await fetch(`/admin/chores/mark-complete?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function markInProgress() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+
+      try {
+        const res = await fetch(`/admin/chores/mark-in-progress?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function markSingleComplete(id) {
+      try {
+        const res = await fetch(`/admin/chores/${id}/complete?token=${token}`, { method: 'POST' });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteSelected() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      if (!confirm(`Delete ${ids.length} chore(s)?`)) return;
+
+      try {
+        const res = await fetch(`/admin/chores/bulk-delete?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteChore(id) {
+      if (!confirm('Delete this chore?')) return;
+      try {
+        const res = await fetch(`/admin/chores/${id}?token=${token}`, { method: 'DELETE' });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function editChore(id) {
+      try {
+        const res = await fetch(`/admin/chores/${id}/edit?token=${token}`);
+        const data = await res.json();
+        if (data.success && data.chore) {
+          const c = data.chore;
+          document.getElementById('editChoreId').value = c.id;
+          document.getElementById('editTitle').value = c.title || '';
+          document.getElementById('editDescription').value = c.description || '';
+          document.getElementById('editCategory').value = c.category || 'general';
+          document.getElementById('editPriority').value = c.priority || 'normal';
+          document.getElementById('editStatus').value = c.status || 'pending';
+          document.getElementById('editAssignedTo').value = c.assignedTo || '';
+          document.getElementById('editDueDate').value = c.dueDate ? c.dueDate.split('T')[0] : '';
+          document.getElementById('editEstimatedTime').value = c.estimatedTime || '';
+          document.getElementById('editNotes').value = c.notes || '';
+          new bootstrap.Modal(document.getElementById('editChoreModal')).show();
+        } else {
+          alert('Failed to load chore');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

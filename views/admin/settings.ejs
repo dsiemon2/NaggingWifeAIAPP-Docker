@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Nagging Wife AI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --sidebar-bg: <%= branding?.primaryColor || '#9333ea' %>; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: var(--sidebar-bg); position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+    .color-preview { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #dee2e6; }
+    .logo-preview { max-height: 80px; max-width: 200px; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px; background: #fff; }
+    .font-preview { padding: 10px; border: 1px solid #dee2e6; border-radius: 8px; margin-top: 10px; }
+    .provider-card { transition: all 0.2s; }
+    .provider-card.disabled { opacity: 0.5; pointer-events: none; }
+    .nav-pills .nav-link { color: #495057; }
+    .nav-pills .nav-link.active { background-color: #0d6efd; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'settings', branding }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <h2 class="mb-4"><i class="bi bi-gear text-primary me-2"></i>System Settings</h2>
+
+        <div class="toast-container"></div>
+
+        <!-- Settings Navigation Tabs -->
+        <ul class="nav nav-pills mb-4" id="settingsTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="familyinfo-tab" data-bs-toggle="pill" data-bs-target="#familyinfo" type="button" role="tab">
+              <i class="bi bi-house-heart me-1"></i> Family Info
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="branding-tab" data-bs-toggle="pill" data-bs-target="#branding" type="button" role="tab">
+              <i class="bi bi-palette me-1"></i> Branding
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payment-tab" data-bs-toggle="pill" data-bs-target="#payment" type="button" role="tab">
+              <i class="bi bi-credit-card me-1"></i> Payment Gateways
+            </button>
+          </li>
+        </ul>
+
+        <form id="settingsForm">
+          <div class="tab-content" id="settingsTabContent">
+
+            <!-- Family Info Tab -->
+            <div class="tab-pane fade show active" id="familyinfo" role="tabpanel">
+              <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="mb-0"><i class="bi bi-house-heart me-2"></i>Family Information</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Family Name</label>
+                      <input type="text" class="form-control" id="businessName" value="<%= settings?.businessName || '' %>" placeholder="e.g., Happy Home">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Tagline</label>
+                      <input type="text" class="form-control" id="tagline" value="<%= settings?.tagline || '' %>" placeholder="e.g., Happy Wife, Happy Life">
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Family Description</label>
+                    <textarea class="form-control" id="description" rows="2" placeholder="Brief description of your family or household"><%= settings?.description || '' %></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" id="address" rows="2" placeholder="Home address"><%= settings?.address || '' %></textarea>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Phone</label>
+                      <input type="tel" class="form-control" id="phone" value="<%= settings?.phone || '' %>" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Email</label>
+                      <input type="email" class="form-control" id="email" value="<%= settings?.email || '' %>" placeholder="family@example.com">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Website</label>
+                      <input type="url" class="form-control" id="website" value="<%= settings?.website || '' %>" placeholder="https://www.example.com">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Availability Hours</label>
+                      <input type="text" class="form-control" id="businessHours" value="<%= settings?.businessHours || '' %>" placeholder="e.g., Always on duty!">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Timezone</label>
+                      <select class="form-select" id="timezone">
+                        <option value="America/New_York" <%= settings?.timezone === 'America/New_York' ? 'selected' : '' %>>Eastern Time (ET)</option>
+                        <option value="America/Chicago" <%= settings?.timezone === 'America/Chicago' ? 'selected' : '' %>>Central Time (CT)</option>
+                        <option value="America/Denver" <%= settings?.timezone === 'America/Denver' ? 'selected' : '' %>>Mountain Time (MT)</option>
+                        <option value="America/Los_Angeles" <%= settings?.timezone === 'America/Los_Angeles' ? 'selected' : '' %>>Pacific Time (PT)</option>
+                        <option value="America/Anchorage" <%= settings?.timezone === 'America/Anchorage' ? 'selected' : '' %>>Alaska Time (AKT)</option>
+                        <option value="Pacific/Honolulu" <%= settings?.timezone === 'Pacific/Honolulu' ? 'selected' : '' %>>Hawaii Time (HT)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Branding Tab -->
+            <div class="tab-pane fade" id="branding" role="tabpanel">
+              <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0"><i class="bi bi-palette me-2"></i>Branding & Appearance</h5>
+                </div>
+                <div class="card-body">
+                  <!-- Logo Section -->
+                  <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-image me-2"></i>Logo</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Logo URL</label>
+                      <input type="url" class="form-control" id="logoUrl" value="<%= settings?.logoUrl || '' %>" placeholder="https://example.com/logo.png" onchange="updateLogoPreview()">
+                      <div class="form-text">Recommended: PNG or SVG, 200x60px</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Preview</label>
+                      <div class="logo-preview d-flex align-items-center justify-content-center" id="logoPreview">
+                        <% if (settings?.logoUrl) { %>
+                          <img src="<%= settings.logoUrl %>" alt="Logo" style="max-height: 60px;">
+                        <% } else { %>
+                          <span class="text-muted">No logo set</span>
+                        <% } %>
+                      </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Favicon URL</label>
+                      <input type="url" class="form-control" id="faviconUrl" value="<%= settings?.faviconUrl || '' %>" placeholder="https://example.com/favicon.ico">
+                      <div class="form-text">Recommended: ICO or PNG, 32x32px</div>
+                    </div>
+                  </div>
+
+                  <!-- Colors Section -->
+                  <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-palette2 me-2"></i>Colors</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Primary Color</label>
+                      <div class="d-flex align-items-center gap-2">
+                        <input type="color" class="form-control form-control-color" id="primaryColor" value="<%= settings?.primaryColor || '#9333ea' %>" onchange="updateColorPreview('primary')">
+                        <input type="text" class="form-control" id="primaryColorText" value="<%= settings?.primaryColor || '#9333ea' %>" style="max-width: 100px;" onchange="syncColorPicker('primary')">
+                        <div class="color-preview" id="primaryColorPreview" style="background-color: <%= settings?.primaryColor || '#9333ea' %>"></div>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Secondary Color</label>
+                      <div class="d-flex align-items-center gap-2">
+                        <input type="color" class="form-control form-control-color" id="secondaryColor" value="<%= settings?.secondaryColor || '#7e22ce' %>" onchange="updateColorPreview('secondary')">
+                        <input type="text" class="form-control" id="secondaryColorText" value="<%= settings?.secondaryColor || '#7e22ce' %>" style="max-width: 100px;" onchange="syncColorPicker('secondary')">
+                        <div class="color-preview" id="secondaryColorPreview" style="background-color: <%= settings?.secondaryColor || '#7e22ce' %>"></div>
+                      </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">Accent Color</label>
+                      <div class="d-flex align-items-center gap-2">
+                        <input type="color" class="form-control form-control-color" id="accentColor" value="<%= settings?.accentColor || '#a855f7' %>" onchange="updateColorPreview('accent')">
+                        <input type="text" class="form-control" id="accentColorText" value="<%= settings?.accentColor || '#a855f7' %>" style="max-width: 100px;" onchange="syncColorPicker('accent')">
+                        <div class="color-preview" id="accentColorPreview" style="background-color: <%= settings?.accentColor || '#a855f7' %>"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Typography Section -->
+                  <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-fonts me-2"></i>Typography</h6>
+                  <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Heading Font</label>
+                      <select class="form-select" id="headingFont" onchange="updateFontPreview()">
+                        <option value="Inter" <%= settings?.headingFont === 'Inter' ? 'selected' : '' %>>Inter</option>
+                        <option value="Roboto" <%= settings?.headingFont === 'Roboto' ? 'selected' : '' %>>Roboto</option>
+                        <option value="Open Sans" <%= settings?.headingFont === 'Open Sans' ? 'selected' : '' %>>Open Sans</option>
+                        <option value="Lato" <%= settings?.headingFont === 'Lato' ? 'selected' : '' %>>Lato</option>
+                        <option value="Montserrat" <%= settings?.headingFont === 'Montserrat' ? 'selected' : '' %>>Montserrat</option>
+                        <option value="Poppins" <%= settings?.headingFont === 'Poppins' ? 'selected' : '' %>>Poppins</option>
+                        <option value="Playfair Display" <%= settings?.headingFont === 'Playfair Display' ? 'selected' : '' %>>Playfair Display</option>
+                        <option value="Georgia" <%= settings?.headingFont === 'Georgia' ? 'selected' : '' %>>Georgia</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Body Font</label>
+                      <select class="form-select" id="bodyFont" onchange="updateFontPreview()">
+                        <option value="Inter" <%= settings?.bodyFont === 'Inter' ? 'selected' : '' %>>Inter</option>
+                        <option value="Roboto" <%= settings?.bodyFont === 'Roboto' ? 'selected' : '' %>>Roboto</option>
+                        <option value="Open Sans" <%= settings?.bodyFont === 'Open Sans' ? 'selected' : '' %>>Open Sans</option>
+                        <option value="Lato" <%= settings?.bodyFont === 'Lato' ? 'selected' : '' %>>Lato</option>
+                        <option value="Source Sans Pro" <%= settings?.bodyFont === 'Source Sans Pro' ? 'selected' : '' %>>Source Sans Pro</option>
+                        <option value="Nunito" <%= settings?.bodyFont === 'Nunito' ? 'selected' : '' %>>Nunito</option>
+                        <option value="Arial" <%= settings?.bodyFont === 'Arial' ? 'selected' : '' %>>Arial</option>
+                        <option value="Georgia" <%= settings?.bodyFont === 'Georgia' ? 'selected' : '' %>>Georgia</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="font-preview bg-white" id="fontPreview">
+                    <h5 id="headingPreview" style="font-family: '<%= settings?.headingFont || 'Inter' %>';">Heading Font Preview</h5>
+                    <p id="bodyPreview" style="font-family: '<%= settings?.bodyFont || 'Inter' %>';">This is how your body text will appear with the selected font.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Gateways Tab -->
+            <div class="tab-pane fade" id="payment" role="tabpanel">
+              <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                  <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Payment Gateway Configuration</h5>
+                </div>
+                <div class="card-body">
+                  <!-- Master Payment Toggle -->
+                  <div class="d-flex justify-content-between align-items-center py-3 border-bottom bg-light px-3 rounded mb-4">
+                    <div>
+                      <h6 class="mb-1"><i class="bi bi-power text-success me-2"></i>Enable Payment Processing</h6>
+                      <small class="text-muted">Master switch - Enable/disable all payment integrations</small>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="paymentsEnabled" style="width: 3em; height: 1.5em;" onchange="togglePaymentProviders()" <%= settings?.paymentsEnabled ? 'checked' : '' %>>
+                    </div>
+                  </div>
+
+                  <div id="paymentProvidersSection">
+                    <!-- Stripe -->
+                    <div class="border rounded p-3 mb-3 provider-card" id="stripeSection">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                          <h6 class="mb-1"><i class="bi bi-stripe text-primary me-2"></i>Stripe</h6>
+                          <small class="text-muted">Cards + Apple Pay + Google Pay - <a href="https://stripe.com" target="_blank">stripe.com</a></small>
+                        </div>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="stripeEnabled" style="width: 2.5em; height: 1.25em;" onchange="handleProviderToggle('stripe')" <%= settings?.stripeEnabled ? 'checked' : '' %>>
+                        </div>
+                      </div>
+                      <div class="row g-2" id="stripeFields">
+                        <div class="col-md-6">
+                          <label class="form-label small">Publishable Key</label>
+                          <input type="text" class="form-control form-control-sm" id="stripePublishableKey" placeholder="pk_live_... or pk_test_..." value="<%= settings?.stripePublishableKey || '' %>">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label small">Secret Key</label>
+                          <input type="password" class="form-control form-control-sm" id="stripeSecretKey" placeholder="sk_live_... or sk_test_..." autocomplete="new-password">
+                        </div>
+                        <div class="col-12 mt-2">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="stripeTestMode" <%= settings?.stripeTestMode ? 'checked' : '' %>>
+                            <label class="form-check-label small"><i class="bi bi-bug me-1"></i>Test Mode</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- PayPal -->
+                    <div class="border rounded p-3 mb-3 provider-card" id="paypalSection">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                          <h6 class="mb-1"><i class="bi bi-paypal text-info me-2"></i>PayPal</h6>
+                          <small class="text-muted">PayPal + Venmo - <a href="https://paypal.com" target="_blank">paypal.com</a></small>
+                        </div>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="paypalEnabled" style="width: 2.5em; height: 1.25em;" onchange="handleProviderToggle('paypal')" <%= settings?.paypalEnabled ? 'checked' : '' %>>
+                        </div>
+                      </div>
+                      <div class="row g-2" id="paypalFields">
+                        <div class="col-md-6">
+                          <label class="form-label small">Client ID</label>
+                          <input type="text" class="form-control form-control-sm" id="paypalClientId" placeholder="PayPal Client ID" value="<%= settings?.paypalClientId || '' %>">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label small">Client Secret</label>
+                          <input type="password" class="form-control form-control-sm" id="paypalClientSecret" placeholder="PayPal Client Secret" autocomplete="new-password">
+                        </div>
+                        <div class="col-12 mt-2">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="paypalSandbox" <%= settings?.paypalSandbox ? 'checked' : '' %>>
+                            <label class="form-check-label small"><i class="bi bi-bug me-1"></i>Sandbox Mode</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Square -->
+                    <div class="border rounded p-3 mb-3 provider-card" id="squareSection">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                          <h6 class="mb-1"><i class="bi bi-square text-dark me-2"></i>Square</h6>
+                          <small class="text-muted">Cards + Square Wallet - <a href="https://squareup.com" target="_blank">squareup.com</a></small>
+                        </div>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="squareEnabled" style="width: 2.5em; height: 1.25em;" onchange="handleProviderToggle('square')" <%= settings?.squareEnabled ? 'checked' : '' %>>
+                        </div>
+                      </div>
+                      <div class="row g-2" id="squareFields">
+                        <div class="col-md-6">
+                          <label class="form-label small">Application ID</label>
+                          <input type="text" class="form-control form-control-sm" id="squareAppId" placeholder="sq0idp-..." value="<%= settings?.squareAppId || '' %>">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label small">Access Token</label>
+                          <input type="password" class="form-control form-control-sm" id="squareAccessToken" placeholder="Access Token" autocomplete="new-password">
+                        </div>
+                        <div class="col-12 mt-2">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="squareSandbox" <%= settings?.squareSandbox ? 'checked' : '' %>>
+                            <label class="form-check-label small"><i class="bi bi-bug me-1"></i>Sandbox Mode</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Provider Comparison -->
+                  <div class="table-responsive mt-4">
+                    <h6><i class="bi bi-table me-2"></i>Provider Comparison</h6>
+                    <table class="table table-sm table-bordered">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Feature</th>
+                          <th class="text-center">Stripe</th>
+                          <th class="text-center">PayPal</th>
+                          <th class="text-center">Square</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Card Processing</td>
+                          <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                          <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                          <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                        </tr>
+                        <tr>
+                          <td>Digital Wallets</td>
+                          <td class="text-center"><i class="bi bi-check-circle text-success"></i> Apple/Google</td>
+                          <td class="text-center"><i class="bi bi-check-circle text-success"></i> PayPal/Venmo</td>
+                          <td class="text-center"><i class="bi bi-check-circle text-success"></i> Square</td>
+                        </tr>
+                        <tr>
+                          <td>Processing Fee</td>
+                          <td class="text-center">2.9% + 30c</td>
+                          <td class="text-center">2.9% + 30c</td>
+                          <td class="text-center">2.6% + 10c</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" data-bs-toggle="tooltip" title="Save all settings">
+            <i class="bi bi-save me-2"></i>Save Settings
+          </button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const token = '<%= token %>';
+
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+      togglePaymentProviders();
+    });
+
+    function showToast(message, type = 'success') {
+      const container = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast show align-items-center text-bg-${type} border-0`;
+      toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function updateLogoPreview() {
+      const url = document.getElementById('logoUrl').value;
+      const preview = document.getElementById('logoPreview');
+      if (url) {
+        preview.innerHTML = `<img src="${url}" alt="Logo" style="max-height: 60px;" onerror="this.parentElement.innerHTML='<span class=\\'text-danger\\'>Failed to load</span>'">`;
+      } else {
+        preview.innerHTML = '<span class="text-muted">No logo set</span>';
+      }
+    }
+
+    function updateColorPreview(type) {
+      const color = document.getElementById(`${type}Color`).value;
+      document.getElementById(`${type}ColorText`).value = color;
+      document.getElementById(`${type}ColorPreview`).style.backgroundColor = color;
+    }
+
+    function syncColorPicker(type) {
+      const text = document.getElementById(`${type}ColorText`).value;
+      if (/^#[0-9A-Fa-f]{6}$/.test(text)) {
+        document.getElementById(`${type}Color`).value = text;
+        document.getElementById(`${type}ColorPreview`).style.backgroundColor = text;
+      }
+    }
+
+    function updateFontPreview() {
+      const headingFont = document.getElementById('headingFont').value;
+      const bodyFont = document.getElementById('bodyFont').value;
+      document.getElementById('headingPreview').style.fontFamily = `'${headingFont}', sans-serif`;
+      document.getElementById('bodyPreview').style.fontFamily = `'${bodyFont}', sans-serif`;
+    }
+
+    function togglePaymentProviders() {
+      const enabled = document.getElementById('paymentsEnabled').checked;
+      const section = document.getElementById('paymentProvidersSection');
+      section.style.opacity = enabled ? '1' : '0.5';
+      section.style.pointerEvents = enabled ? 'auto' : 'none';
+    }
+
+    function handleProviderToggle(provider) {
+      // Optional: Only one provider active at a time
+      // const providers = ['stripe', 'paypal', 'square'];
+      // if (document.getElementById(`${provider}Enabled`).checked) {
+      //   providers.forEach(p => {
+      //     if (p !== provider) document.getElementById(`${p}Enabled`).checked = false;
+      //   });
+      // }
+    }
+
+    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const data = {
+          // Family Info
+          businessName: document.getElementById('businessName').value,
+          tagline: document.getElementById('tagline').value,
+          description: document.getElementById('description').value,
+          address: document.getElementById('address').value,
+          phone: document.getElementById('phone').value,
+          email: document.getElementById('email').value,
+          website: document.getElementById('website').value,
+          businessHours: document.getElementById('businessHours').value,
+          timezone: document.getElementById('timezone').value,
+          // Branding
+          logoUrl: document.getElementById('logoUrl').value,
+          faviconUrl: document.getElementById('faviconUrl').value,
+          primaryColor: document.getElementById('primaryColor').value,
+          secondaryColor: document.getElementById('secondaryColor').value,
+          accentColor: document.getElementById('accentColor').value,
+          headingFont: document.getElementById('headingFont').value,
+          bodyFont: document.getElementById('bodyFont').value,
+          // Payment Gateways
+          paymentsEnabled: document.getElementById('paymentsEnabled').checked,
+          stripeEnabled: document.getElementById('stripeEnabled').checked,
+          stripePublishableKey: document.getElementById('stripePublishableKey').value,
+          stripeSecretKey: document.getElementById('stripeSecretKey').value,
+          stripeTestMode: document.getElementById('stripeTestMode').checked,
+          paypalEnabled: document.getElementById('paypalEnabled').checked,
+          paypalClientId: document.getElementById('paypalClientId').value,
+          paypalClientSecret: document.getElementById('paypalClientSecret').value,
+          paypalSandbox: document.getElementById('paypalSandbox').checked,
+          squareEnabled: document.getElementById('squareEnabled').checked,
+          squareAppId: document.getElementById('squareAppId').value,
+          squareAccessToken: document.getElementById('squareAccessToken').value,
+          squareSandbox: document.getElementById('squareSandbox').checked
+        };
+
+        const res = await fetch(`/NaggingWife/admin/settings?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) showToast('Settings saved successfully!');
+        else showToast('Failed to save settings', 'danger');
+      } catch (err) {
+        showToast('Error saving settings: ' + err.message, 'danger');
+      }
+    });
+  </script>
+</body>
+</html>

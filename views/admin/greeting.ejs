@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greeting Config - Nagging Wife AI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'greeting' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <h2 class="mb-4"><i class="bi bi-chat-quote text-primary me-2"></i>Greeting Configuration</h2>
+
+        <!-- Toast container -->
+        <div class="toast-container"></div>
+
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-megaphone me-2"></i>Welcome Greeting</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Configure the greeting message that family members hear when they start a reminder check-in. This message is spoken by the AI at the start of each session.</p>
+
+            <form id="greetingForm">
+              <div class="mb-3">
+                <label for="greeting" class="form-label">Greeting Message</label>
+                <textarea class="form-control" id="greeting" name="greeting" rows="5" placeholder="Enter the greeting message..."><%= greeting %></textarea>
+                <div class="form-text">This message will be spoken exactly as written. Keep it friendly and professional.</div>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" title="Save the greeting message">
+                  <i class="bi bi-save me-2"></i>Save Greeting
+                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary me-2" id="previewBtn" onclick="previewGreeting()" data-bs-toggle="tooltip" title="Listen to greeting using text-to-speech">
+                    <i class="bi bi-play-fill me-2"></i>Preview (Text-to-Speech)
+                  </button>
+                  <button type="button" class="btn btn-outline-danger" onclick="stopPreview()" style="display:none;" id="stopBtn" data-bs-toggle="tooltip" title="Stop playback">
+                    <i class="bi bi-stop-fill me-2"></i>Stop
+                  </button>
+                </div>
+              </div>
+              <div id="ttsStatus" class="mt-2 small text-muted">Ready - uses OpenAI TTS</div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tips Card -->
+        <div class="card">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Tips for a Good Greeting</h5>
+          </div>
+          <div class="card-body">
+            <ul class="mb-0">
+              <li><strong>Keep it friendly:</strong> Start with a warm, familiar tone to set the mood.</li>
+              <li><strong>Set the tone:</strong> Match your assistant mode (gentle, firm, nagging, etc.).</li>
+              <li><strong>Be helpful:</strong> Mention that you're here to help with reminders and tasks.</li>
+              <li><strong>Add personality:</strong> A little humor goes a long way!</li>
+              <li><strong>Keep it brief:</strong> Under 400 characters is ideal for a smooth start.</li>
+              <li><strong>Avoid special characters:</strong> Stick to plain text for best voice synthesis.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Example Greetings -->
+        <div class="card mt-4">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Example Greetings</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <strong>Helpful Mode:</strong>
+              <p class="text-muted mb-2">"Hey there, sweetie! It's your friendly reminder assistant. I'm here to help you stay on top of important dates, chores, and all those things you'd otherwise forget. Don't worry, I'll keep you organized! Ready to check in?"</p>
+              <button class="btn btn-sm btn-outline-primary" onclick="useExample(this)" data-bs-toggle="tooltip" title="Use this example greeting">Use This</button>
+            </div>
+            <hr>
+            <div class="mb-3">
+              <strong>Nagging Mode:</strong>
+              <p class="text-muted mb-2">"Oh, so you finally decided to check in! Let me tell you what you've been putting off. Your wife's birthday is coming up, the lawn looks terrible, and don't get me started on that leaky faucet. Let's get to work!"</p>
+              <button class="btn btn-sm btn-outline-primary" onclick="useExample(this)" data-bs-toggle="tooltip" title="Use this example greeting">Use This</button>
+            </div>
+            <hr>
+            <div>
+              <strong>Gentle Mode:</strong>
+              <p class="text-muted mb-2">"Hi honey! Just checking in to see how things are going. I have a few gentle reminders for you when you're ready. No rush - take your time!"</p>
+              <button class="btn btn-sm btn-outline-primary" onclick="useExample(this)" data-bs-toggle="tooltip" title="Use this example greeting">Use This</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Character Count -->
+        <div class="mt-3 text-muted">
+          <small>Character count: <span id="charCount">0</span> / Recommended: under 400 characters</small>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const token = '<%= token %>';
+    const greetingTextarea = document.getElementById('greeting');
+    const charCount = document.getElementById('charCount');
+
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+    });
+
+    // Update character count
+    function updateCharCount() {
+      charCount.textContent = greetingTextarea.value.length;
+      charCount.className = greetingTextarea.value.length > 400 ? 'text-warning' : '';
+    }
+    greetingTextarea.addEventListener('input', updateCharCount);
+    updateCharCount();
+
+    function useExample(btn) {
+      const text = btn.previousElementSibling.textContent.trim().replace(/^"|"$/g, '');
+      greetingTextarea.value = text;
+      updateCharCount();
+      showToast('Example loaded! Remember to save.', 'info');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast show align-items-center text-bg-${type} border-0`;
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Save greeting
+    document.getElementById('greetingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const greeting = greetingTextarea.value.trim();
+
+      if (!greeting) {
+        showToast('Please enter a greeting message', 'danger');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/admin/greeting?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ greeting })
+        });
+
+        if (res.ok) {
+          showToast('Greeting saved successfully!');
+        } else {
+          showToast('Failed to save greeting', 'danger');
+        }
+      } catch (err) {
+        showToast('Error saving greeting', 'danger');
+      }
+    });
+
+    // Preview greeting using browser TTS
+    const ttsStatus = document.getElementById('ttsStatus');
+    const previewBtn = document.getElementById('previewBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    function stopPreview() {
+      window.speechSynthesis.cancel();
+      previewBtn.style.display = 'inline-block';
+      stopBtn.style.display = 'none';
+      ttsStatus.textContent = 'Stopped';
+    }
+
+    function previewGreeting() {
+      const text = greetingTextarea.value.trim();
+      if (!text) {
+        showToast('Please enter a greeting message first', 'warning');
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.onstart = () => {
+        ttsStatus.textContent = 'Playing...';
+        previewBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+      };
+
+      utterance.onend = () => {
+        ttsStatus.textContent = 'Preview complete';
+        previewBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
+      };
+
+      utterance.onerror = () => {
+        ttsStatus.textContent = 'Error playing preview';
+        previewBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
+      };
+
+      window.speechSynthesis.speak(utterance);
+      showToast('Playing preview...', 'info');
+    }
+  </script>
+</body>
+</html>

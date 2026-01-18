@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --sidebar-bg: <%= branding?.primaryColor || '#9333ea' %>; }
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: var(--sidebar-bg); position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .stat-card { border-radius: 12px; border: none; }
+    .stat-card .stat-icon { font-size: 2.5rem; opacity: 0.8; }
+    .stat-card .stat-value { font-size: 2rem; font-weight: bold; }
+    .bulk-actions { display: none; background: #e3f2fd; padding: 0.75rem 1rem; border-radius: 8px; }
+    .bulk-actions.show { display: flex; }
+    .row-checkbox { cursor: pointer; width: 18px; height: 18px; }
+    tr.selected { background-color: #cfe2ff !important; }
+    tr.selected td { background-color: #cfe2ff !important; }
+    tbody tr:hover { background-color: #f8f9fa; }
+    tbody tr.selected:hover { background-color: #b6d4fe !important; }
+    .upcoming-alert { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); }
+    .announcement-bar { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.5rem 1rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'dashboard', branding }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <!-- Announcement Bar -->
+        <% if (announcements && announcements.length > 0) { %>
+        <div class="announcement-bar mb-4 rounded">
+          <i class="bi bi-megaphone me-2"></i>
+          <strong><%= announcements[0].title %></strong>
+          <% if (announcements[0].linkUrl) { %>
+            <a href="<%= announcements[0].linkUrl %>" class="text-white ms-2">Learn More <i class="bi bi-arrow-right"></i></a>
+          <% } %>
+        </div>
+        <% } %>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2><i class="bi bi-heart-fill text-danger me-2"></i>Dashboard</h2>
+            <p class="text-muted mb-0">Happy Wife, Happy Life - Your AI Assistant</p>
+          </div>
+          <div>
+            <a href="/admin/chores?token=<%= token %>" class="btn btn-primary me-2" data-bs-toggle="tooltip" title="Add a new chore or task">
+              <i class="bi bi-plus-lg"></i> Add Chore
+            </a>
+            <a href="/admin/important-dates?token=<%= token %>" class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Add an important date">
+              <i class="bi bi-calendar-plus"></i> Add Date
+            </a>
+          </div>
+        </div>
+
+        <!-- Upcoming Alert Banner -->
+        <% if (upcomingDates && upcomingDates.length > 0) { %>
+        <div class="alert upcoming-alert text-white mb-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>Don't Forget!</strong>
+              <% upcomingDates.slice(0, 3).forEach((date, i) => { %>
+                <%= i > 0 ? ' | ' : ' ' %><%= date.title %> (<%= date.daysUntil %> days)
+              <% }) %>
+            </div>
+            <a href="/admin/important-dates?token=<%= token %>" class="btn btn-light btn-sm">View All</a>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card bg-danger text-white">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-value"><%= stats.upcomingDates || 0 %></div>
+                  <div>Upcoming Dates (7d)</div>
+                </div>
+                <i class="bi bi-calendar-heart stat-icon"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card bg-warning text-dark">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-value"><%= stats.pendingChores || 0 %></div>
+                  <div>Pending Chores</div>
+                </div>
+                <i class="bi bi-list-check stat-icon"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card bg-success text-white">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-value"><%= stats.wishlistItems || 0 %></div>
+                  <div>Wishlist Items</div>
+                </div>
+                <i class="bi bi-gift stat-icon"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card bg-info text-white">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-value"><%= stats.giftOrders || 0 %></div>
+                  <div>Gift Orders</div>
+                </div>
+                <i class="bi bi-bag-heart stat-icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3">
+                    <a href="/admin/gift-orders?token=<%= token %>" class="btn btn-outline-danger w-100 py-3" data-bs-toggle="tooltip" title="Order flowers for your wife">
+                      <i class="bi bi-flower1 d-block mb-2" style="font-size: 1.5rem;"></i>
+                      Order Flowers
+                    </a>
+                  </div>
+                  <div class="col-md-3">
+                    <a href="/admin/wishlist?token=<%= token %>" class="btn btn-outline-primary w-100 py-3" data-bs-toggle="tooltip" title="Browse her wishlist for gift ideas">
+                      <i class="bi bi-gift d-block mb-2" style="font-size: 1.5rem;"></i>
+                      View Wishlist
+                    </a>
+                  </div>
+                  <div class="col-md-3">
+                    <a href="/admin/chores?token=<%= token %>" class="btn btn-outline-warning w-100 py-3" data-bs-toggle="tooltip" title="Check your honey-do list">
+                      <i class="bi bi-tools d-block mb-2" style="font-size: 1.5rem;"></i>
+                      Honey-Do List
+                    </a>
+                  </div>
+                  <div class="col-md-3">
+                    <a href="/admin/important-dates?token=<%= token %>" class="btn btn-outline-success w-100 py-3" data-bs-toggle="tooltip" title="Manage important dates">
+                      <i class="bi bi-calendar-event d-block mb-2" style="font-size: 1.5rem;"></i>
+                      Important Dates
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Upcoming Important Dates -->
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar-heart text-danger me-2"></i>Upcoming Dates</h5>
+                <a href="/admin/important-dates?token=<%= token %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View all important dates">View All</a>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Event</th>
+                      <th>Date</th>
+                      <th>Days Left</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (upcomingDates && upcomingDates.length > 0) { %>
+                      <% upcomingDates.slice(0, 5).forEach(date => { %>
+                      <tr>
+                        <td>
+                          <i class="bi bi-<%= date.dateType === 'birthday' ? 'cake text-primary' : date.dateType === 'anniversary' ? 'heart-fill text-danger' : 'calendar-event text-info' %> me-1"></i>
+                          <strong><%= date.title %></strong>
+                          <% if (date.person) { %><br><small class="text-muted"><%= date.person %></small><% } %>
+                        </td>
+                        <td><%= new Date(date.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></td>
+                        <td>
+                          <% if (date.daysUntil === 0) { %>
+                            <span class="badge bg-danger">Today!</span>
+                          <% } else if (date.daysUntil <= 7) { %>
+                            <span class="badge bg-warning text-dark"><%= date.daysUntil %> days</span>
+                          <% } else { %>
+                            <span class="text-muted"><%= date.daysUntil %> days</span>
+                          <% } %>
+                        </td>
+                      </tr>
+                      <% }) %>
+                    <% } else { %>
+                    <tr>
+                      <td colspan="3" class="text-center text-muted py-4">
+                        No upcoming dates. Add important dates to get reminders!
+                      </td>
+                    </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Chores -->
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check text-warning me-2"></i>Pending Chores</h5>
+                <a href="/admin/chores?token=<%= token %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View all chores">View All</a>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Task</th>
+                      <th>Priority</th>
+                      <th>Due</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (pendingChores && pendingChores.length > 0) { %>
+                      <% pendingChores.slice(0, 5).forEach(chore => { %>
+                      <tr>
+                        <td>
+                          <strong><%= chore.title %></strong>
+                          <% if (chore.category) { %><br><small class="text-muted"><%= chore.category %></small><% } %>
+                        </td>
+                        <td>
+                          <span class="badge bg-<%= chore.priority === 'urgent' ? 'danger' : chore.priority === 'high' ? 'warning text-dark' : 'secondary' %>">
+                            <%= chore.priority %>
+                          </span>
+                        </td>
+                        <td>
+                          <% if (chore.dueDate) { %>
+                            <%= new Date(chore.dueDate).toLocaleDateString() %>
+                          <% } else { %>
+                            -
+                          <% } %>
+                        </td>
+                      </tr>
+                      <% }) %>
+                    <% } else { %>
+                    <tr>
+                      <td colspan="3" class="text-center text-muted py-4">
+                        All caught up! No pending chores.
+                      </td>
+                    </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ads Section -->
+        <% if (ads && ads.length > 0) { %>
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-megaphone me-2"></i>Featured Products</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <% ads.slice(0, 4).forEach(ad => { %>
+              <div class="col-md-3 mb-3">
+                <div class="card h-100">
+                  <% if (ad.imageUrl) { %>
+                  <img src="<%= ad.imageUrl %>" class="card-img-top" alt="<%= ad.title %>" style="height: 120px; object-fit: cover;">
+                  <% } %>
+                  <div class="card-body">
+                    <h6 class="card-title"><%= ad.title %></h6>
+                    <span class="badge bg-secondary mb-2"><%= ad.category %></span>
+                    <% if (ad.linkUrl) { %>
+                    <a href="<%= ad.linkUrl %>" target="_blank" class="btn btn-sm btn-outline-primary w-100">View Deal</a>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Wife's Wishlist Preview -->
+        <div class="card">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-gift text-danger me-2"></i>Wife's Wishlist Highlights</h5>
+            <a href="/admin/wishlist?token=<%= token %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View full wishlist">View Full Wishlist</a>
+          </div>
+          <div class="card-body p-0">
+            <div class="bulk-actions m-3" id="bulkActions">
+              <span class="me-3"><strong id="selectedCount">0</strong> selected</span>
+              <button class="btn btn-sm btn-outline-success" onclick="orderSelected()" data-bs-toggle="tooltip" title="Order selected items">
+                <i class="bi bi-cart-plus"></i> Order Selected
+              </button>
+            </div>
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input" id="selectAll" data-bs-toggle="tooltip" title="Select all">
+                  </th>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Price Range</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <% if (wishlistItems && wishlistItems.length > 0) { %>
+                  <% wishlistItems.slice(0, 5).forEach(item => { %>
+                  <tr>
+                    <td><input type="checkbox" class="form-check-input row-checkbox" data-id="<%= item.id %>"></td>
+                    <td>
+                      <strong><%= item.name %></strong>
+                      <% if (item.productUrl) { %>
+                        <a href="<%= item.productUrl %>" target="_blank" class="ms-1"><i class="bi bi-box-arrow-up-right"></i></a>
+                      <% } %>
+                    </td>
+                    <td><span class="badge bg-secondary"><%= item.category %></span></td>
+                    <td>
+                      <span class="badge bg-<%= item.priority === 'must-have' ? 'danger' : item.priority === 'high' ? 'warning text-dark' : 'info' %>">
+                        <%= item.priority %>
+                      </span>
+                    </td>
+                    <td><%= item.priceRange || '-' %></td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-success" onclick="orderItem('<%= item.id %>')" data-bs-toggle="tooltip" title="Order this item">
+                        <i class="bi bi-cart-plus"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <% }) %>
+                <% } else { %>
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    No wishlist items yet. Add items she wants!
+                  </td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <div class="text-muted small">Showing <span id="showingStart">1</span>-<span id="showingEnd"><%= wishlistItems?.slice(0,5).length || 0 %></span> of <span id="totalRows"><%= wishlistItems?.length || 0 %></span></div>
+            <nav>
+              <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+            </nav>
+            <select class="form-select form-select-sm" id="pageSize" style="width: auto;">
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <%- include('_table-controls') %>
+  <script>
+    const token = '<%= token %>';
+    let tableControls;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      tableControls = new TableControls();
+    });
+
+    function getSelectedIds() {
+      return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.id);
+    }
+
+    function orderSelected() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      window.location.href = `/admin/gift-orders/new?wishlistIds=${ids.join(',')}&token=${token}`;
+    }
+
+    function orderItem(id) {
+      window.location.href = `/admin/gift-orders/new?wishlistItemId=${id}&token=${token}`;
+    }
+  </script>
+</body>
+</html>

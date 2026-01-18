@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Config - Nagging Wife AI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'ai-config' }) %>
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-sliders text-primary me-2"></i>AI Configuration</h2>
+          <button class="btn btn-success" id="saveConfig" data-bs-toggle="tooltip" title="Save AI configuration changes"><i class="bi bi-check-lg"></i> Save Changes</button>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-header"><i class="bi bi-cpu me-2"></i>Model Settings</div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label">Default Model</label>
+                  <select class="form-select" name="defaultModel">
+                    <option value="gpt-4o-realtime" <%= config?.defaultModel === 'gpt-4o-realtime' ? 'selected' : '' %>>GPT-4o Realtime</option>
+                    <option value="gpt-4o" <%= config?.defaultModel === 'gpt-4o' ? 'selected' : '' %>>GPT-4o</option>
+                    <option value="gpt-4-turbo" <%= config?.defaultModel === 'gpt-4-turbo' ? 'selected' : '' %>>GPT-4 Turbo</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Temperature</label>
+                  <input type="range" class="form-range" min="0" max="2" step="0.1" value="<%= config?.temperature || 0.7 %>">
+                  <small class="text-muted">Current: <%= config?.temperature || 0.7 %></small>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Max Tokens</label>
+                  <input type="number" class="form-control" name="maxTokens" value="<%= config?.maxTokens || 4096 %>">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-header"><i class="bi bi-mic me-2"></i>Voice Settings</div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label">Default Voice</label>
+                  <select class="form-select" name="defaultVoice">
+                    <option value="alloy">Alloy (Neutral)</option>
+                    <option value="echo">Echo (Male)</option>
+                    <option value="fable">Fable (British)</option>
+                    <option value="onyx">Onyx (Deep Male)</option>
+                    <option value="nova">Nova (Female)</option>
+                    <option value="shimmer">Shimmer (Soft Female)</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Speech Speed</label>
+                  <input type="range" class="form-range" min="0.5" max="2" step="0.1" value="<%= config?.speechSpeed || 1.0 %>">
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="enableTTS" <%= config?.enableTTS ? 'checked' : '' %>>
+                  <label class="form-check-label" for="enableTTS">Enable Text-to-Speech</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><i class="bi bi-shield-check me-2"></i>Safety Settings</div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="contentFilter" checked>
+                  <label class="form-check-label" for="contentFilter">Enable Content Filtering</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="piiDetection" checked>
+                  <label class="form-check-label" for="piiDetection">PII Detection & Masking</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="transcriptLogging" checked>
+                  <label class="form-check-label" for="transcriptLogging">Log Transcripts</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="recordCalls">
+                  <label class="form-check-label" for="recordCalls">Record Calls</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize tooltips
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+    });
+  </script>
+</body>
+</html>

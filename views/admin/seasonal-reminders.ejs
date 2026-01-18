@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seasonal Reminders - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .bulk-actions { display: none; background: #e3f2fd; padding: 0.75rem 1rem; border-radius: 8px; }
+    .bulk-actions.show { display: flex; }
+    .row-checkbox { cursor: pointer; width: 18px; height: 18px; }
+    tr.selected { background-color: #cfe2ff !important; }
+    tr.selected td { background-color: #cfe2ff !important; }
+    tbody tr:hover { background-color: #f8f9fa; }
+    tbody tr.selected:hover { background-color: #b6d4fe !important; }
+    .season-card { transition: transform 0.2s; cursor: pointer; }
+    .season-card:hover { transform: translateY(-5px); }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'seasonal-reminders' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-bell text-warning me-2"></i>Seasonal Reminders</h2>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReminderModal">
+            <i class="bi bi-plus-lg"></i> Add Reminder
+          </button>
+        </div>
+
+        <!-- Seasonal Cards -->
+        <div class="row mb-4">
+          <div class="col-md-3 mb-3">
+            <div class="card season-card bg-danger text-white h-100" onclick="filterSeason('valentines')">
+              <div class="card-body text-center">
+                <i class="bi bi-heart-fill" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Valentine's Day</h5>
+                <p class="mb-0">Feb 14</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card season-card bg-pink text-white h-100" style="background: #e91e63;" onclick="filterSeason('mothers-day')">
+              <div class="card-body text-center">
+                <i class="bi bi-flower1" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Mother's Day</h5>
+                <p class="mb-0">2nd Sunday May</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card season-card bg-success text-white h-100" onclick="filterSeason('christmas')">
+              <div class="card-body text-center">
+                <i class="bi bi-tree" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Christmas</h5>
+                <p class="mb-0">Dec 25</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card season-card bg-primary text-white h-100" onclick="filterSeason('birthday')">
+              <div class="card-body text-center">
+                <i class="bi bi-cake" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Birthdays</h5>
+                <p class="mb-0">Never forget!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+              <div class="card-body">
+                <h6><i class="bi bi-bell"></i> Active Reminders</h6>
+                <h3 class="mb-0"><%= activeCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-calendar-event"></i> Upcoming (30 days)</h6>
+                <h3 class="mb-0"><%= upcomingCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h6><i class="bi bi-gift"></i> Gift Ideas Saved</h6>
+                <h3 class="mb-0"><%= giftIdeasCount || 0 %></h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="bulk-actions mb-3" id="bulkActions">
+          <span class="me-3"><strong id="selectedCount">0</strong> selected</span>
+          <button class="btn btn-sm btn-outline-success me-2" onclick="enableSelected()" data-bs-toggle="tooltip" title="Enable selected reminders">
+            <i class="bi bi-check-circle"></i> Enable
+          </button>
+          <button class="btn btn-sm btn-outline-secondary me-2" onclick="disableSelected()" data-bs-toggle="tooltip" title="Disable selected reminders">
+            <i class="bi bi-x-circle"></i> Disable
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteSelected()" data-bs-toggle="tooltip" title="Delete selected reminders">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input" id="selectAll" data-bs-toggle="tooltip" title="Select all">
+                  </th>
+                  <th>Season/Event</th>
+                  <th>Reminder Message</th>
+                  <th>Remind Days Before</th>
+                  <th>Ad Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <% if (reminders && reminders.length > 0) { %>
+                  <% reminders.forEach(reminder => { %>
+                  <tr>
+                    <td><input type="checkbox" class="form-check-input row-checkbox" data-id="<%= reminder.id %>"></td>
+                    <td>
+                      <i class="bi bi-<%= reminder.season === 'christmas' ? 'tree text-success' : reminder.season === 'valentines' ? 'heart-fill text-danger' : reminder.season === 'mothers-day' ? 'flower1 text-pink' : reminder.season === 'birthday' ? 'cake text-primary' : reminder.season === 'anniversary' ? 'heart text-danger' : 'calendar-event text-info' %>" style="font-size: 1.2rem;"></i>
+                      <strong><%= reminder.name %></strong>
+                      <% if (reminder.description) { %>
+                        <br><small class="text-muted"><%= reminder.description.substring(0, 50) %><%= reminder.description.length > 50 ? '...' : '' %></small>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (reminder.message) { %>
+                        "<%= reminder.message.substring(0, 40) %><%= reminder.message.length > 40 ? '...' : '' %>"
+                      <% } else { %>
+                        <span class="text-muted">Default message</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="badge bg-info"><%= reminder.reminderDays %> days</span>
+                    </td>
+                    <td>
+                      <% if (reminder.adCategory) { %>
+                        <span class="badge bg-secondary"><%= reminder.adCategory %></span>
+                      <% } else { %>
+                        -
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (reminder.isActive) { %>
+                        <span class="badge bg-success"><i class="bi bi-check"></i> Active</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary"><i class="bi bi-x"></i> Inactive</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" onclick="editReminder('<%= reminder.id %>')" data-bs-toggle="tooltip" title="Edit reminder">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-success" onclick="viewGiftSuggestions('<%= reminder.id %>')" data-bs-toggle="tooltip" title="View gift suggestions">
+                        <i class="bi bi-gift"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deleteReminder('<%= reminder.id %>')" data-bs-toggle="tooltip" title="Delete reminder">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <% }) %>
+                <% } else { %>
+                <tr>
+                  <td colspan="7" class="text-center py-5">
+                    <i class="bi bi-bell text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">No Seasonal Reminders Yet</h5>
+                    <p class="text-muted">Set up reminders for holidays, birthdays, and special occasions!</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReminderModal">
+                      <i class="bi bi-plus-lg"></i> Add First Reminder
+                    </button>
+                  </td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <div class="text-muted small">Showing <span id="showingStart">1</span>-<span id="showingEnd"><%= reminders?.length || 0 %></span> of <span id="totalRows"><%= reminders?.length || 0 %></span></div>
+            <nav>
+              <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+            </nav>
+            <select class="form-select form-select-sm" id="pageSize" style="width: auto;">
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Edit Reminder Modal -->
+  <div class="modal fade" id="editReminderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Seasonal Reminder</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="editReminderForm">
+          <input type="hidden" name="id" id="editReminderId">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Reminder Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="name" id="editName" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Season/Event <span class="text-danger">*</span></label>
+                <select class="form-select" name="season" id="editSeason" required>
+                  <option value="christmas">Christmas</option>
+                  <option value="valentines">Valentine's Day</option>
+                  <option value="mothers-day">Mother's Day</option>
+                  <option value="birthday">Birthday</option>
+                  <option value="anniversary">Anniversary</option>
+                  <option value="easter">Easter</option>
+                  <option value="thanksgiving">Thanksgiving</option>
+                  <option value="new-year">New Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" name="description" id="editDescription" rows="2"></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Remind Days Before</label>
+                <select class="form-select" name="reminderDays" id="editReminderDays">
+                  <option value="7">7 days</option>
+                  <option value="14">14 days</option>
+                  <option value="21">21 days</option>
+                  <option value="30">30 days</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Ad Category to Show</label>
+                <select class="form-select" name="adCategory" id="editAdCategory">
+                  <option value="">None</option>
+                  <option value="seasonal">Seasonal Gifts</option>
+                  <option value="jewelry">Jewelry</option>
+                  <option value="flowers">Flowers</option>
+                  <option value="experiences">Experiences</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Custom Reminder Message</label>
+              <textarea class="form-control" name="message" id="editMessage" rows="2"></textarea>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="isActive" id="editIsActive">
+              <label class="form-check-label" for="editIsActive">
+                Active (will send notifications)
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Reminder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Reminder Modal -->
+  <div class="modal fade" id="addReminderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bell-fill me-2"></i>Add Seasonal Reminder</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="addReminderForm">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Reminder Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="name" placeholder="e.g., Valentine's Day Reminder" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Season/Event <span class="text-danger">*</span></label>
+                <select class="form-select" name="season" required>
+                  <option value="christmas">Christmas</option>
+                  <option value="valentines">Valentine's Day</option>
+                  <option value="mothers-day">Mother's Day</option>
+                  <option value="birthday">Birthday</option>
+                  <option value="anniversary">Anniversary</option>
+                  <option value="easter">Easter</option>
+                  <option value="thanksgiving">Thanksgiving</option>
+                  <option value="new-year">New Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" name="description" rows="2" placeholder="Description of the reminder..."></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Remind Days Before</label>
+                <select class="form-select" name="reminderDays">
+                  <option value="7">7 days</option>
+                  <option value="14" selected>14 days</option>
+                  <option value="21">21 days</option>
+                  <option value="30">30 days</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Ad Category to Show</label>
+                <select class="form-select" name="adCategory">
+                  <option value="">None</option>
+                  <option value="seasonal">Seasonal Gifts</option>
+                  <option value="jewelry">Jewelry</option>
+                  <option value="flowers">Flowers</option>
+                  <option value="experiences">Experiences</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Custom Reminder Message</label>
+              <textarea class="form-control" name="message" rows="2" placeholder="Don't forget to get something special for..."></textarea>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="isActive" id="isActiveCheck" checked>
+              <label class="form-check-label" for="isActiveCheck">
+                Active (will send notifications)
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Reminder</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gift Suggestions Modal -->
+  <div class="modal fade" id="giftSuggestionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-gift me-2"></i>Gift Suggestions</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="giftReminderId">
+          <div class="mb-3">
+            <label class="form-label">Reminder: <strong id="giftReminderName"></strong></label>
+          </div>
+          <div class="mb-3">
+            <div class="input-group">
+              <input type="text" class="form-control" id="newGiftSuggestion" placeholder="Add a gift suggestion...">
+              <button class="btn btn-primary" type="button" onclick="addGiftSuggestion()">
+                <i class="bi bi-plus-lg"></i> Add
+              </button>
+            </div>
+          </div>
+          <div id="giftSuggestionsList">
+            <!-- Gift suggestions will be loaded here -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <%- include('_table-controls') %>
+  <script>
+    const token = '<%= token %>';
+    let currentGiftSuggestions = [];
+    let tableControls;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize table controls with pagination and selection
+      tableControls = new TableControls();
+
+      document.getElementById('addReminderForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        data.isActive = document.getElementById('isActiveCheck').checked;
+
+        try {
+          const res = await fetch(`/admin/seasonal-reminders?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            location.reload();
+          } else {
+            alert('Failed to save reminder');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+
+      document.getElementById('editReminderForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editReminderId').value;
+        const data = {
+          name: document.getElementById('editName').value,
+          season: document.getElementById('editSeason').value,
+          description: document.getElementById('editDescription').value,
+          reminderDays: parseInt(document.getElementById('editReminderDays').value),
+          adCategory: document.getElementById('editAdCategory').value || null,
+          message: document.getElementById('editMessage').value,
+          isActive: document.getElementById('editIsActive').checked
+        };
+
+        try {
+          const res = await fetch(`/admin/seasonal-reminders/${id}?token=${token}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (res.ok) {
+            location.reload();
+          } else {
+            alert('Failed to update reminder');
+          }
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+    });
+
+    function getSelectedIds() {
+      return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.id);
+    }
+
+    function filterSeason(season) {
+      window.location.href = `/admin/seasonal-reminders?token=${token}&season=${season}`;
+    }
+
+    async function enableSelected() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+
+      try {
+        const res = await fetch(`/admin/seasonal-reminders/bulk-enable?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function disableSelected() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+
+      try {
+        const res = await fetch(`/admin/seasonal-reminders/bulk-disable?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteSelected() {
+      const ids = getSelectedIds();
+      if (ids.length === 0) return;
+      if (!confirm(`Delete ${ids.length} reminder(s)?`)) return;
+
+      try {
+        const res = await fetch(`/admin/seasonal-reminders/bulk-delete?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteReminder(id) {
+      if (!confirm('Delete this reminder?')) return;
+      try {
+        const res = await fetch(`/admin/seasonal-reminders/${id}?token=${token}`, { method: 'DELETE' });
+        if (res.ok) location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function editReminder(id) {
+      try {
+        const res = await fetch(`/admin/seasonal-reminders/${id}/edit?token=${token}`);
+        const data = await res.json();
+        if (data.success && data.reminder) {
+          const r = data.reminder;
+          document.getElementById('editReminderId').value = r.id;
+          document.getElementById('editName').value = r.name || '';
+          document.getElementById('editSeason').value = r.season || 'christmas';
+          document.getElementById('editDescription').value = r.description || '';
+          document.getElementById('editReminderDays').value = r.reminderDays || 14;
+          document.getElementById('editAdCategory').value = r.adCategory || '';
+          document.getElementById('editMessage').value = r.message || '';
+          document.getElementById('editIsActive').checked = r.isActive;
+          new bootstrap.Modal(document.getElementById('editReminderModal')).show();
+        } else {
+          alert('Failed to load reminder');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function viewGiftSuggestions(id) {
+      try {
+        const res = await fetch(`/admin/seasonal-reminders/${id}/edit?token=${token}`);
+        const data = await res.json();
+        if (data.success && data.reminder) {
+          const r = data.reminder;
+          document.getElementById('giftReminderId').value = r.id;
+          document.getElementById('giftReminderName').textContent = r.name;
+          currentGiftSuggestions = [];
+          try {
+            currentGiftSuggestions = JSON.parse(r.giftSuggestions || '[]');
+          } catch {
+            currentGiftSuggestions = [];
+          }
+          renderGiftSuggestions();
+          new bootstrap.Modal(document.getElementById('giftSuggestionsModal')).show();
+        } else {
+          alert('Failed to load reminder');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function renderGiftSuggestions() {
+      const container = document.getElementById('giftSuggestionsList');
+      if (currentGiftSuggestions.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-3">No gift suggestions yet. Add some ideas!</p>';
+        return;
+      }
+      container.innerHTML = currentGiftSuggestions.map((gift, idx) => `
+        <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+          <div><i class="bi bi-gift text-danger me-2"></i>${gift}</div>
+          <button class="btn btn-sm btn-outline-danger" onclick="removeGiftSuggestion(${idx})" data-bs-toggle="tooltip" title="Remove">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function addGiftSuggestion() {
+      const input = document.getElementById('newGiftSuggestion');
+      const suggestion = input.value.trim();
+      if (!suggestion) return;
+
+      currentGiftSuggestions.push(suggestion);
+      input.value = '';
+      renderGiftSuggestions();
+      await saveGiftSuggestions();
+    }
+
+    async function removeGiftSuggestion(idx) {
+      currentGiftSuggestions.splice(idx, 1);
+      renderGiftSuggestions();
+      await saveGiftSuggestions();
+    }
+
+    async function saveGiftSuggestions() {
+      const id = document.getElementById('giftReminderId').value;
+      try {
+        await fetch(`/admin/seasonal-reminders/${id}?token=${token}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ giftSuggestions: currentGiftSuggestions })
+        });
+      } catch (err) {
+        alert('Error saving: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

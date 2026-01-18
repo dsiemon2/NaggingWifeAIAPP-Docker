@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voices & Languages - Nagging Wife AI Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #2c3e50; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+
+    .voice-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 3px solid transparent;
+    }
+    .voice-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .voice-card.selected {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+    }
+    .voice-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 1rem;
+      color: white;
+    }
+    .voice-card .play-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .voice-card:hover .play-btn {
+      opacity: 1;
+    }
+
+    .mode-card {
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 3px solid transparent;
+    }
+    .mode-card:hover {
+      border-color: #dee2e6;
+    }
+    .mode-card.selected {
+      border-color: #0d6efd;
+      background: rgba(13, 110, 253, 0.05);
+    }
+
+    .difficulty-btn {
+      transition: all 0.2s;
+    }
+    .difficulty-btn.active {
+      transform: scale(1.05);
+    }
+
+    .lang-card {
+      transition: all 0.2s;
+    }
+    .lang-card.disabled-lang {
+      opacity: 0.5;
+    }
+    .lang-flag {
+      font-size: 2rem;
+      margin-right: 0.75rem;
+    }
+
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'voices' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <h2 class="mb-4"><i class="bi bi-volume-up text-primary me-2"></i>Voices, Languages & Mode</h2>
+
+        <!-- Toast container -->
+        <div class="toast-container"></div>
+
+        <!-- Assistant Mode Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Assistant Mode</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Choose how the AI assistant will interact with you.</p>
+
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="card mode-card h-100 p-3 <%= config.assistantMode === 'ai_only' ? 'selected' : '' %>"
+                     data-mode="ai_only" onclick="selectMode('ai_only')">
+                  <div class="text-center">
+                    <i class="bi bi-robot text-primary" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Fully Automated</h4>
+                    <p class="text-muted mb-0">The AI handles all reminders and nagging autonomously. Set it and forget it!</p>
+                    <% if (config.assistantMode === 'ai_only') { %>
+                    <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card mode-card h-100 p-3 <%= config.assistantMode === 'hybrid' ? 'selected' : '' %>"
+                     data-mode="hybrid" onclick="selectMode('hybrid')">
+                  <div class="text-center">
+                    <i class="bi bi-person-fill text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Interactive Mode</h4>
+                    <p class="text-muted mb-0">AI provides suggestions and reminders, but you confirm before taking action on gifts and orders.</p>
+                    <% if (config.assistantMode === 'hybrid') { %>
+                    <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nagging Intensity Section -->
+        <div class="card mb-4" id="difficultySection" style="<%= config.assistantMode !== 'hybrid' ? 'display:none;' : '' %>">
+          <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Nagging Intensity</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">How persistent should the AI be with reminders?</p>
+
+            <div class="row g-3">
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-success w-100 difficulty-btn <%= config.difficulty === 'easy' ? 'active btn-success text-white' : '' %>"
+                        onclick="selectDifficulty('easy')">
+                  <i class="bi bi-emoji-smile d-block" style="font-size: 2rem;"></i>
+                  <strong>Gentle</strong>
+                  <small class="d-block text-muted">Occasional friendly reminders</small>
+                </button>
+              </div>
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-warning w-100 difficulty-btn <%= config.difficulty === 'medium' ? 'active btn-warning text-dark' : '' %>"
+                        onclick="selectDifficulty('medium')">
+                  <i class="bi bi-emoji-neutral d-block" style="font-size: 2rem;"></i>
+                  <strong>Moderate</strong>
+                  <small class="d-block text-muted">Regular helpful nudges</small>
+                </button>
+              </div>
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-danger w-100 difficulty-btn <%= config.difficulty === 'hard' ? 'active btn-danger text-white' : '' %>"
+                        onclick="selectDifficulty('hard')">
+                  <i class="bi bi-emoji-frown d-block" style="font-size: 2rem;"></i>
+                  <strong>Persistent</strong>
+                  <small class="d-block text-muted">Frequent reminders until done</small>
+                </button>
+              </div>
+              <div class="col-md-3 col-6">
+                <button class="btn btn-outline-dark w-100 difficulty-btn <%= config.difficulty === 'expert' ? 'active btn-dark text-white' : '' %>"
+                        onclick="selectDifficulty('expert')">
+                  <i class="bi bi-emoji-angry d-block" style="font-size: 2rem;"></i>
+                  <strong>Full Nag</strong>
+                  <small class="d-block text-muted">Relentless - like a real wife!</small>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voice Selection Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Select AI Voice</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Choose the voice for your AI assistant. Click to select, hover to preview.</p>
+
+            <!-- Male Voices -->
+            <h6 class="text-muted mb-3"><i class="bi bi-gender-male me-2"></i>Male Voices</h6>
+            <div class="row g-4 mb-4">
+              <% const maleVoices = [
+                { id: 'ash', name: 'Ash', desc: 'Confident & authoritative', detail: 'Clear articulation, professional', color: '#2c3e50' },
+                { id: 'echo', name: 'Echo', desc: 'Calm & reassuring', detail: 'Soft-spoken, gentle delivery', color: '#1a5276' },
+                { id: 'verse', name: 'Verse', desc: 'Dynamic & engaging', detail: 'Energetic, great for sales', color: '#6f42c1' }
+              ];
+              maleVoices.forEach((voice) => { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card voice-card h-100 text-center p-3 position-relative <%= config.selectedVoice === voice.id ? 'selected' : '' %>"
+                     data-voice="<%= voice.id %>" onclick="selectVoice('<%= voice.id %>')">
+                  <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); previewVoice('<%= voice.id %>')">
+                    <i class="bi bi-play-fill"></i>
+                  </button>
+                  <div class="voice-avatar" style="background: <%= voice.color %>;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=<%= voice.id %>male&top=shortFlat,shortCurly,shortWaved&facialHair=beardLight,beardMedium,moustacheFancy&facialHairProbability=50&clothesColor=3c4f5c,65c9ff&backgroundColor=transparent"
+                         alt="<%= voice.name %>" width="90" height="90">
+                  </div>
+                  <h5 class="mb-1"><%= voice.name %></h5>
+                  <span class="badge bg-info mb-1">American English</span>
+                  <small class="text-muted d-block"><%= voice.desc %></small>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;"><%= voice.detail %></small>
+                  <% if (config.selectedVoice === voice.id) { %>
+                  <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                  <% } %>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+
+            <!-- Female Voices -->
+            <h6 class="text-muted mb-3"><i class="bi bi-gender-female me-2"></i>Female Voices</h6>
+            <div class="row g-4 mb-4">
+              <% const femaleVoices = [
+                { id: 'alloy', name: 'Alloy', desc: 'Neutral & balanced', detail: 'Versatile, works for any context', color: '#6c757d' },
+                { id: 'ballad', name: 'Ballad', desc: 'Warm & expressive', detail: 'Emotional range, storytelling', color: '#d63384' },
+                { id: 'coral', name: 'Coral', desc: 'Friendly & upbeat', detail: 'Cheerful, great for sales', color: '#fd7e14' },
+                { id: 'sage', name: 'Sage', desc: 'Wise & professional', detail: 'Mature, trustworthy tone', color: '#198754' },
+                { id: 'shimmer', name: 'Shimmer', desc: 'Bright & energetic', detail: 'Youthful, enthusiastic', color: '#0dcaf0' }
+              ];
+              femaleVoices.forEach((voice) => { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card voice-card h-100 text-center p-3 position-relative <%= config.selectedVoice === voice.id ? 'selected' : '' %>"
+                     data-voice="<%= voice.id %>" onclick="selectVoice('<%= voice.id %>')">
+                  <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); previewVoice('<%= voice.id %>')">
+                    <i class="bi bi-play-fill"></i>
+                  </button>
+                  <div class="voice-avatar" style="background: <%= voice.color %>;">
+                    <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=<%= voice.id %>woman&backgroundColor=transparent"
+                         alt="<%= voice.name %>" width="90" height="90">
+                  </div>
+                  <h5 class="mb-1"><%= voice.name %></h5>
+                  <span class="badge bg-info mb-1">American English</span>
+                  <small class="text-muted d-block"><%= voice.desc %></small>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;"><%= voice.detail %></small>
+                  <% if (config.selectedVoice === voice.id) { %>
+                  <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+                  <% } %>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+
+            <!-- Info about accents -->
+            <div class="alert alert-warning mt-3">
+              <h6><i class="bi bi-exclamation-triangle me-2"></i>British & Other Accents Not Available</h6>
+              <p class="mb-2"><strong>OpenAI's Realtime API only offers American English voices.</strong> British, Australian, Southern US, and other accents are not currently available through OpenAI.</p>
+              <p class="mb-0"><strong>For British voices and more accents:</strong> Integration with
+                <a href="https://elevenlabs.io" target="_blank" class="alert-link">ElevenLabs</a> or
+                <a href="https://play.ht" target="_blank" class="alert-link">PlayHT</a> would be required. These services offer:
+                <ul class="mb-0 mt-2">
+                  <li>British English (Male & Female)</li>
+                  <li>Australian English</li>
+                  <li>Southern US / Texas accent</li>
+                  <li>Irish, Scottish, Indian English, and 50+ more</li>
+                </ul>
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Languages Section -->
+        <div class="card mb-4">
+          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-translate me-2"></i>Supported Languages</h5>
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addLanguageModal">
+              <i class="bi bi-plus-lg"></i> Add Language
+            </button>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Enable or disable languages for your voice assistant.</p>
+
+            <div class="row g-3">
+              <% if (languages && languages.length > 0) { %>
+                <% languages.forEach(lang => { %>
+                <div class="col-md-4 col-sm-6">
+                  <div class="card lang-card <%= !lang.enabled ? 'disabled-lang' : '' %>">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <span class="lang-flag"><%= lang.flag || '🌐' %></span>
+                        <div>
+                          <strong><%= lang.name %></strong>
+                          <br><small class="text-muted"><%= lang.nativeName %> (<%= lang.code %>)</small>
+                        </div>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox"
+                               id="lang-<%= lang.code %>"
+                               <%= lang.enabled ? 'checked' : '' %>
+                               onchange="toggleLanguage('<%= lang.id %>', this.checked)">
+                      </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 pt-0">
+                      <small class="text-muted">
+                        <i class="bi bi-file-text"></i> <%= lang.docCount || 0 %> KB documents
+                      </small>
+                    </div>
+                  </div>
+                </div>
+                <% }); %>
+              <% } else { %>
+                <div class="col-12">
+                  <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>No languages configured. Click "Add Language" to get started.
+                  </div>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row g-3">
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-arrow-left-right text-warning" style="font-size: 2rem;"></i>
+                <h4 class="mt-2"><%= config.assistantMode === 'ai_only' ? 'Automated' : 'Interactive' %></h4>
+                <small class="text-muted">Assistant Mode</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-speedometer2 text-danger" style="font-size: 2rem;"></i>
+                <h4 class="mt-2 text-capitalize"><%= config.difficulty %></h4>
+                <small class="text-muted">Nag Intensity</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-volume-up-fill text-primary" style="font-size: 2rem;"></i>
+                <h4 class="mt-2 text-capitalize"><%= config.selectedVoice %></h4>
+                <small class="text-muted">Current Voice</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-translate text-success" style="font-size: 2rem;"></i>
+                <h4 class="mt-2"><%= languages ? languages.filter(l => l.enabled).length : 0 %></h4>
+                <small class="text-muted">Active Languages</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md">
+            <div class="card text-center h-100">
+              <div class="card-body">
+                <i class="bi bi-file-text text-info" style="font-size: 2rem;"></i>
+                <h4 class="mt-2"><%= typeof totalDocs !== 'undefined' ? totalDocs : 0 %></h4>
+                <small class="text-muted">KB Documents</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Language Modal -->
+  <div class="modal fade" id="addLanguageModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Language</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="/admin/voices/language?token=<%= token %>">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Language</label>
+              <select class="form-select" name="code" required>
+                <option value="">Select a language...</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="es">🇪🇸 Spanish - Español</option>
+                <option value="fr">🇫🇷 French - Français</option>
+                <option value="de">🇩🇪 German - Deutsch</option>
+                <option value="it">🇮🇹 Italian - Italiano</option>
+                <option value="pt">🇧🇷 Portuguese - Português</option>
+                <option value="zh">🇨🇳 Chinese - 中文</option>
+                <option value="ja">🇯🇵 Japanese - 日本語</option>
+                <option value="ko">🇰🇷 Korean - 한국어</option>
+                <option value="ar">🇸🇦 Arabic - العربية</option>
+                <option value="hi">🇮🇳 Hindi - हिन्दी</option>
+                <option value="ru">🇷🇺 Russian - Русский</option>
+                <option value="vi">🇻🇳 Vietnamese - Tiếng Việt</option>
+                <option value="pl">🇵🇱 Polish - Polski</option>
+                <option value="nl">🇳🇱 Dutch - Nederlands</option>
+                <option value="uk">🇺🇦 Ukrainian - Українська</option>
+                <option value="tr">🇹🇷 Turkish - Türkçe</option>
+                <option value="th">🇹🇭 Thai - ไทย</option>
+                <option value="sv">🇸🇪 Swedish - Svenska</option>
+                <option value="cs">🇨🇿 Czech - Čeština</option>
+                <option value="el">🇬🇷 Greek - Ελληνικά</option>
+                <option value="he">🇮🇱 Hebrew - עברית</option>
+                <option value="id">🇮🇩 Indonesian - Bahasa Indonesia</option>
+                <option value="fil">🇵🇭 Filipino</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Language</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el) });
+  </script>
+  <script>
+    const token = '<%= token %>';
+
+    function showToast(message, type = 'success') {
+      const container = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast show align-items-center text-bg-${type} border-0`;
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function selectMode(mode) {
+      try {
+        const res = await fetch(`/admin/voices/mode?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+
+        if (res.ok) {
+          // Update UI
+          document.querySelectorAll('.mode-card').forEach(card => {
+            card.classList.remove('selected');
+            const badge = card.querySelector('.badge');
+            if (badge) badge.remove();
+          });
+
+          const selectedCard = document.querySelector(`[data-mode="${mode}"]`);
+          selectedCard.classList.add('selected');
+          selectedCard.querySelector('.text-center').insertAdjacentHTML('beforeend',
+            '<span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>');
+
+          // Show/hide difficulty section
+          document.getElementById('difficultySection').style.display = mode === 'hybrid' ? '' : 'none';
+
+          showToast(`Mode changed to ${mode === 'ai_only' ? 'AI Only' : 'Hybrid'}`);
+        }
+      } catch (err) {
+        showToast('Failed to update mode', 'danger');
+      }
+    }
+
+    async function selectDifficulty(difficulty) {
+      try {
+        const res = await fetch(`/admin/voices/difficulty?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ difficulty })
+        });
+
+        if (res.ok) {
+          // Update UI
+          document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.remove('active', 'btn-success', 'btn-warning', 'btn-danger', 'btn-dark', 'text-white', 'text-dark');
+            btn.classList.add('btn-outline-' + btn.dataset.difficulty);
+          });
+
+          const colors = { easy: 'success', medium: 'warning', hard: 'danger', expert: 'dark' };
+          const textColors = { easy: 'text-white', medium: 'text-dark', hard: 'text-white', expert: 'text-white' };
+          const btn = document.querySelector(`.difficulty-btn[onclick*="${difficulty}"]`);
+          btn.classList.add('active', `btn-${colors[difficulty]}`, textColors[difficulty]);
+          btn.classList.remove(`btn-outline-${colors[difficulty]}`);
+
+          showToast(`Difficulty set to ${difficulty}`);
+        }
+      } catch (err) {
+        showToast('Failed to update difficulty', 'danger');
+      }
+    }
+
+    async function selectVoice(voiceId) {
+      try {
+        const res = await fetch(`/admin/voices/select?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voice: voiceId })
+        });
+
+        if (res.ok) {
+          // Update UI
+          document.querySelectorAll('.voice-card').forEach(card => {
+            card.classList.remove('selected');
+            const badge = card.querySelector('.badge.bg-primary');
+            if (badge && badge.textContent.includes('Active')) badge.remove();
+          });
+
+          const selectedCard = document.querySelector(`[data-voice="${voiceId}"]`);
+          selectedCard.classList.add('selected');
+          selectedCard.insertAdjacentHTML('beforeend', '<span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>');
+
+          showToast(`Voice changed to ${voiceId}`);
+        }
+      } catch (err) {
+        showToast('Failed to update voice', 'danger');
+      }
+    }
+
+    function previewVoice(voiceId) {
+      // Use browser speech synthesis for preview
+      const utterance = new SpeechSynthesisUtterance(`Hello! I'm ${voiceId}, here to remind you about your wife's birthday coming up! Don't forget the flowers!`);
+      window.speechSynthesis.speak(utterance);
+      showToast(`Playing preview for ${voiceId}...`, 'info');
+    }
+
+    async function toggleLanguage(langId, enabled) {
+      try {
+        const res = await fetch(`/admin/voices/language/${langId}?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+
+        if (res.ok) {
+          const checkbox = document.querySelector(`#lang-${langId}`);
+          const card = checkbox?.closest('.lang-card');
+          if (card) {
+            card.classList.toggle('disabled-lang', !enabled);
+          }
+          showToast(`Language ${enabled ? 'enabled' : 'disabled'}`);
+        }
+      } catch (err) {
+        showToast('Failed to update language', 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

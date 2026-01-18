@@ -1,0 +1,89 @@
+<%
+  const bgColor = (typeof branding !== 'undefined' && branding && branding.primaryColor) ? branding.primaryColor : '#9333ea';
+  const basePath = typeof _basePath !== 'undefined' ? _basePath : '/NaggingWife';
+
+  // User info for display
+  const userRole = (typeof user !== 'undefined' && user && user.role) ? user.role : 'SUPER_ADMIN';
+  const userName = (typeof user !== 'undefined' && user && user.name) ? user.name : 'Admin';
+
+  // Role display names
+  const roleNames = {
+    'SUPER_ADMIN': 'Super Admin',
+    'GROUP_ADMIN': 'Family Admin',
+    'PARTNER': 'Partner',
+    'MEMBER': 'Family Member'
+  };
+%>
+<nav class="col-md-2 d-none d-md-block sidebar p-0" style="background: <%= bgColor %>;">
+  <div class="p-3 text-white">
+    <h5><i class="bi bi-heart-fill text-danger"></i> Nagging Wife AI</h5>
+    <small>Happy Wife, Happy Life</small>
+    <div class="mt-2" style="font-size: 0.75rem; opacity: 0.8;">
+      <i class="bi bi-person-circle me-1"></i><%= userName %>
+      <span class="badge bg-light text-dark ms-1" style="font-size: 0.65rem;"><%= roleNames[userRole] || userRole %></span>
+    </div>
+  </div>
+  <ul class="nav flex-column">
+    <!-- Dashboard & Analytics -->
+    <li class="nav-item"><a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="<%= basePath %>/admin?token=<%= token %>"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'analytics' ? 'active' : '' %>" href="<%= basePath %>/admin/analytics?token=<%= token %>"><i class="bi bi-graph-up"></i> Analytics</a></li>
+
+    <!-- Family Life -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Family Life</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'important-dates' ? 'active' : '' %>" href="<%= basePath %>/admin/important-dates?token=<%= token %>"><i class="bi bi-calendar-heart"></i> Important Dates</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'wishlist' ? 'active' : '' %>" href="<%= basePath %>/admin/wishlist?token=<%= token %>"><i class="bi bi-gift"></i> Wife's Wishlist</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'chores' ? 'active' : '' %>" href="<%= basePath %>/admin/chores?token=<%= token %>"><i class="bi bi-list-check"></i> Chores & Honey-Do's</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'gift-orders' ? 'active' : '' %>" href="<%= basePath %>/admin/gift-orders?token=<%= token %>"><i class="bi bi-bag-heart"></i> Gift Orders</a></li>
+
+    <!-- Reminders & Ads -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Reminders & Ads</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'seasonal-reminders' ? 'active' : '' %>" href="<%= basePath %>/admin/seasonal-reminders?token=<%= token %>"><i class="bi bi-bell"></i> Seasonal Reminders</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'ads-management' ? 'active' : '' %>" href="<%= basePath %>/admin/ads-management?token=<%= token %>"><i class="bi bi-megaphone"></i> Ads Management</a></li>
+
+    <!-- Configuration -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Configuration</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'greeting' ? 'active' : '' %>" href="<%= basePath %>/admin/greeting?token=<%= token %>"><i class="bi bi-chat-quote"></i> Greeting</a></li>
+
+    <!-- AI Settings -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">AI Settings</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'voices' ? 'active' : '' %>" href="<%= basePath %>/admin/voices?token=<%= token %>"><i class="bi bi-volume-up"></i> Voices & Languages</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'ai-config' ? 'active' : '' %>" href="<%= basePath %>/admin/ai-config?token=<%= token %>"><i class="bi bi-sliders"></i> AI Config</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'ai-tools' ? 'active' : '' %>" href="<%= basePath %>/admin/ai-tools?token=<%= token %>"><i class="bi bi-tools"></i> AI Tools</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'knowledge-base' ? 'active' : '' %>" href="<%= basePath %>/admin/knowledge-base?token=<%= token %>"><i class="bi bi-book"></i> Knowledge Base</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'ai-agents' ? 'active' : '' %>" href="<%= basePath %>/admin/ai-agents?token=<%= token %>"><i class="bi bi-robot"></i> AI Agents</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'functions' ? 'active' : '' %>" href="<%= basePath %>/admin/functions?token=<%= token %>"><i class="bi bi-code-slash"></i> Functions</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'logic-rules' ? 'active' : '' %>" href="<%= basePath %>/admin/logic-rules?token=<%= token %>"><i class="bi bi-diagram-3"></i> Logic Rules</a></li>
+
+    <!-- Integrations -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Integrations</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'webhooks' ? 'active' : '' %>" href="<%= basePath %>/admin/webhooks?token=<%= token %>"><i class="bi bi-link-45deg"></i> Webhooks</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'sms-settings' ? 'active' : '' %>" href="<%= basePath %>/admin/sms-settings?token=<%= token %>"><i class="bi bi-chat-dots"></i> SMS Settings</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'payment-gateways' ? 'active' : '' %>" href="<%= basePath %>/admin/payment-gateways?token=<%= token %>"><i class="bi bi-credit-card-2-front"></i> Payment Gateways</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'transactions' ? 'active' : '' %>" href="<%= basePath %>/admin/transactions?token=<%= token %>"><i class="bi bi-receipt"></i> Transactions</a></li>
+
+    <!-- Management -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Management</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'users' ? 'active' : '' %>" href="<%= basePath %>/admin/users?token=<%= token %>"><i class="bi bi-person-badge"></i> Users</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'groups' ? 'active' : '' %>" href="<%= basePath %>/admin/groups?token=<%= token %>"><i class="bi bi-people"></i> Groups</a></li>
+
+    <!-- System -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">System</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="<%= basePath %>/admin/settings?token=<%= token %>"><i class="bi bi-gear"></i> Settings</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'features' ? 'active' : '' %>" href="<%= basePath %>/admin/features?token=<%= token %>"><i class="bi bi-toggles"></i> Features</a></li>
+
+    <!-- Logout -->
+    <div class="nav-divider"></div>
+    <li class="nav-item">
+      <a class="nav-link text-danger" href="<%= basePath %>/admin/logout">
+        <i class="bi bi-box-arrow-left"></i> Logout
+      </a>
+    </li>
+  </ul>
+</nav>

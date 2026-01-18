@@ -1,0 +1,34 @@
+# Windows temp files
+nul
+*/nul
+tmpclaude-*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cookies/credentials
+cookies.txt
+
+# Prisma
+*.db
+*.db-journal

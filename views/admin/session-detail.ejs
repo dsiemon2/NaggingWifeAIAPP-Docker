@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Details - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; max-height: 100vh; overflow-y: auto; background: #1e3a5f; position: sticky; top: 0; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .main-content { background: #f8f9fa; min-height: 100vh; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; padding: 0.5rem 1rem; text-transform: uppercase; }
+    .score-badge { font-size: 1.5rem; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'analytics' }) %>
+
+      <main class="col-md-10 ms-sm-auto main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <a href="/admin/analytics?token=<%= token %>" class="text-muted text-decoration-none">
+              <i class="bi bi-arrow-left me-1"></i> Back to Analytics
+            </a>
+            <h2 class="mt-2"><i class="bi bi-chat-heart text-danger me-2"></i>Session Details</h2>
+            <p class="text-muted mb-0"><%= session.topic %> - <%= new Date(session.scheduledAt).toLocaleDateString() %></p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-8">
+            <!-- Session Details -->
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Session Info</h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <p><strong>Topic:</strong> <%= session.topic %></p>
+                    <p><strong>Date:</strong> <%= new Date(session.scheduledAt).toLocaleString() %></p>
+                    <p><strong>Duration:</strong> <%= session.duration || 30 %> minutes</p>
+                  </div>
+                  <div class="col-md-6">
+                    <p><strong>Status:</strong>
+                      <% if (session.status === 'scheduled') { %>
+                      <span class="badge bg-warning text-dark">Scheduled</span>
+                      <% } else if (session.status === 'in_progress') { %>
+                      <span class="badge bg-primary">In Progress</span>
+                      <% } else if (session.status === 'completed') { %>
+                      <span class="badge bg-success">Completed</span>
+                      <% } else { %>
+                      <span class="badge bg-secondary"><%= session.status %></span>
+                      <% } %>
+                    </p>
+                    <% if (session.score) { %>
+                    <p><strong>Score:</strong>
+                      <span class="badge bg-<%= session.score >= 8 ? 'success' : session.score >= 6 ? 'warning' : 'danger' %> fs-6">
+                        <%= session.score %>/10
+                      </span>
+                    </p>
+                    <% } %>
+                  </div>
+                </div>
+                <% if (session.notes) { %>
+                <hr>
+                <p><strong>Notes:</strong></p>
+                <p class="text-muted"><%= session.notes %></p>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Transcript -->
+            <% if (session.transcript && session.transcript.length > 0) { %>
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Conversation Transcript</h5>
+              </div>
+              <div class="card-body">
+                <div class="conversation">
+                  <% session.transcript.forEach(msg => { %>
+                  <div class="mb-3 <%= msg.role === 'assistant' ? 'ps-0' : 'ps-4' %>">
+                    <div class="d-flex align-items-start">
+                      <div class="me-2">
+                        <% if (msg.role === 'assistant') { %>
+                        <i class="bi bi-robot text-primary fs-5"></i>
+                        <% } else { %>
+                        <i class="bi bi-person text-secondary fs-5"></i>
+                        <% } %>
+                      </div>
+                      <div class="flex-grow-1">
+                        <small class="text-muted fw-bold"><%= msg.role === 'assistant' ? 'Nagging Wife AI' : 'You' %></small>
+                        <p class="mb-0 bg-<%= msg.role === 'assistant' ? 'light' : 'white border' %> p-2 rounded"><%= msg.content %></p>
+                      </div>
+                    </div>
+                  </div>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
+            <% } %>
+          </div>
+
+          <div class="col-md-4">
+            <!-- Score Card -->
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Performance</h5>
+              </div>
+              <div class="card-body text-center">
+                <% if (session.score) { %>
+                <div class="score-badge bg-<%= session.score >= 8 ? 'success' : session.score >= 6 ? 'warning' : 'danger' %> text-white mx-auto mb-3">
+                  <%= session.score %>
+                </div>
+                <p class="text-muted">
+                  <% if (session.score >= 8) { %>
+                  <i class="bi bi-emoji-smile text-success"></i> Great job! Keep it up!
+                  <% } else if (session.score >= 6) { %>
+                  <i class="bi bi-emoji-neutral text-warning"></i> Room for improvement
+                  <% } else { %>
+                  <i class="bi bi-emoji-frown text-danger"></i> Needs more effort!
+                  <% } %>
+                </p>
+                <% } else { %>
+                <div class="py-3">
+                  <i class="bi bi-hourglass text-muted" style="font-size: 2rem;"></i>
+                  <p class="text-muted mt-2 mb-0">Score pending</p>
+                </div>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Summary -->
+            <% if (session.summary) { %>
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-file-text me-2"></i>Summary</h5>
+              </div>
+              <div class="card-body">
+                <p class="mb-0"><%= session.summary %></p>
+              </div>
+            </div>
+            <% } %>
+
+            <!-- Actions -->
+            <div class="card">
+              <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Actions</h6>
+              </div>
+              <div class="card-body">
+                <a href="/admin/analytics?token=<%= token %>" class="btn btn-outline-primary w-100 mb-2">
+                  <i class="bi bi-arrow-left"></i> Back to Analytics
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+    });
+  </script>
+</body>
+</html>
