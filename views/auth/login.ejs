@@ -49,17 +49,6 @@
       background: linear-gradient(135deg, #7b27c9 0%, #c91854 100%);
       border: none;
     }
-    .sample-logins {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      border: 1px dashed #dee2e6;
-    }
-    .sample-login-btn {
-      font-size: 0.8rem;
-      padding: 0.25rem 0.5rem;
-    }
     .divider {
       display: flex;
       align-items: center;
@@ -118,25 +107,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
               <% } %>
-            </div>
-
-            <!-- Sample Logins for Demo -->
-            <div class="sample-logins">
-              <h6 class="mb-2"><i class="bi bi-key me-1"></i>Demo Logins</h6>
-              <div class="d-flex flex-wrap gap-1">
-                <button type="button" class="btn btn-outline-primary sample-login-btn"
-                        onclick="fillLogin('john@family.local', 'admin123')" data-bs-toggle="tooltip" title="Family Admin">
-                  <i class="bi bi-person-fill"></i> John (Admin)
-                </button>
-                <button type="button" class="btn btn-outline-secondary sample-login-btn"
-                        onclick="fillLogin('bob@family.local', 'manager123')" data-bs-toggle="tooltip" title="Manager">
-                  <i class="bi bi-person"></i> Bob
-                </button>
-                <button type="button" class="btn btn-outline-dark sample-login-btn"
-                        onclick="fillLogin('superadmin@system.local', 'superadmin123')" data-bs-toggle="tooltip" title="System Administrator">
-                  <i class="bi bi-shield-lock"></i> Super Admin
-                </button>
-              </div>
             </div>
 
             <form id="loginForm" novalidate>
@@ -211,19 +181,6 @@
   <script>
     // Base path for API calls
     const basePath = '<%= typeof basePath !== "undefined" ? basePath : "/NaggingWife" %>';
-
-    // Initialize tooltips
-    document.addEventListener('DOMContentLoaded', () => {
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
-    });
-
-    // Fill sample login credentials
-    function fillLogin(email, password) {
-      document.getElementById('identifier').value = email;
-      document.getElementById('password').value = password;
-      showAlert('Credentials filled! Click Sign In to continue.', 'info');
-    }
 
     // Toggle password visibility
     function togglePassword() {
