@@ -581,7 +581,7 @@ router.put('/account/email', authenticateUser, async (req: AuthenticatedRequest,
       return;
     }
 
-    const isValid = await bcrypt.compare(password, user.passwordHash);
+    const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       res.status(401).json({ success: false, error: 'Invalid password' });
       return;
@@ -663,17 +663,17 @@ router.put('/account/password', authenticateUser, async (req: AuthenticatedReque
       return;
     }
 
-    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
       res.status(401).json({ success: false, error: 'Current password is incorrect' });
       return;
     }
 
     // Hash and update password
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: req.user.userId },
-      data: { passwordHash },
+      data: { password: hashedPassword },
     });
 
     res.json({ success: true, message: 'Password updated successfully' });

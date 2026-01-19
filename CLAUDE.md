@@ -108,6 +108,7 @@ Available modes in AppConfig.assistantMode:
 - **Database:** PostgreSQL with Prisma ORM
 - **Frontend:** EJS templates + Bootstrap 5 + Bootstrap Icons
 - **Real-time:** WebSockets (OpenAI Realtime API)
+- **SMS:** Twilio (reminders for dates and chores)
 - **Auth:** JWT + bcrypt + Passport.js
 - **Container:** Docker with nginx reverse proxy
 

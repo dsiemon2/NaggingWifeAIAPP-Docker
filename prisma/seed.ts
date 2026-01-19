@@ -1196,9 +1196,9 @@ MEMBER - Minor (Bobby, 14):
     create: {
       id: 'sms-default',
       provider: 'twilio',
-      accountSid: 'AC_EXAMPLE_SID',
-      authToken: 'AUTH_TOKEN_EXAMPLE',
-      fromNumber: '+15551234567',
+      accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+      authToken: process.env.TWILIO_AUTH_TOKEN || '',
+      fromNumber: process.env.TWILIO_PHONE_NUMBER || '',
       enableReminders: true,
       reminderHours: 24,
       isActive: true,

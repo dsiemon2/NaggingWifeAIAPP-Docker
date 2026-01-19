@@ -23,6 +23,9 @@ Humorous AI assistant for remembering dates, chores, and gift planning.
 ### Payment Gateways
 Stripe, PayPal, Braintree, Square, Authorize.net
 
+### SMS/Notifications
+- **Twilio** - SMS reminders for dates and chores
+
 ## Ports
 
 | Service | Port | Description |
