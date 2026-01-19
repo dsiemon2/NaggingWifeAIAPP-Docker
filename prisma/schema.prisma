@@ -86,6 +86,10 @@ model User {
   notificationPrefs UserNotificationPreference?
   devices           UserDevice[]
 
+  // Subscriptions and trial codes
+  subscriptions     Subscription[]
+  trialCodes        TrialCode[]
+
   @@index([groupId])
   @@index([email])
   @@index([emailVerificationToken])
@@ -741,4 +745,81 @@ model UserDevice {
   createdAt          DateTime  @default(now())
 
   @@index([userId])
+}
+
+// ============================================
+// SUBSCRIPTION PLANS
+// ============================================
+
+model SubscriptionPlan {
+  id                 String    @id @default(cuid())
+  name               String
+  code               String    @unique // basic, standard, premium
+  description        String?
+  price              Float     @default(0)
+  currency           String    @default("USD")
+  billingPeriod      String    @default("monthly") // monthly, yearly
+  remindersPerMonth  Int?      // null = unlimited
+  familyMembersAllowed Int?    // null = unlimited
+  features           String?   // JSON array of features
+  isActive           Boolean   @default(true)
+  sortOrder          Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  subscriptions      Subscription[]
+}
+
+// ============================================
+// USER SUBSCRIPTIONS
+// ============================================
+
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id])
+  planId                String
+  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
+  stripeSubscriptionId  String?
+  stripeCustomerId      String?
+  status                String    @default("active") // active, trialing, canceled, past_due
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  canceledAt            DateTime?
+  endedAt               DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// TRIAL CODES
+// ============================================
+
+model TrialCode {
+  id                    String    @id @default(cuid())
+  code                  String    @unique
+  requesterFirstName    String
+  requesterLastName     String
+  requesterEmail        String
+  requesterPhone        String?
+  requesterOrganization String?
+  deliveryMethod        String    @default("email") // email, sms
+  durationDays          Int       @default(14)
+  status                String    @default("pending") // pending, sent, redeemed, expired, revoked
+  userId                String?
+  user                  User?     @relation(fields: [userId], references: [id])
+  redeemedAt            DateTime?
+  expiresAt             DateTime
+  revokedAt             DateTime?
+  revokedReason         String?
+  extensionCount        Int       @default(0)
+  parentCodeId          String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([code])
+  @@index([status])
 }

@@ -28,7 +28,7 @@ echo "PostgreSQL is ready!"
 
 # Run database migrations
 echo "Running database migrations..."
-npx prisma db push --skip-generate
+npx prisma db push --skip-generate --accept-data-loss
 
 # Always run seed - Prisma upsert will handle duplicates
 echo "Seeding database..."

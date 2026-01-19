@@ -72,6 +72,18 @@
     <li class="nav-item"><a class="nav-link <%= active === 'users' ? 'active' : '' %>" href="<%= basePath %>/admin/users?token=<%= token %>"><i class="bi bi-person-badge"></i> Users</a></li>
     <li class="nav-item"><a class="nav-link <%= active === 'groups' ? 'active' : '' %>" href="<%= basePath %>/admin/groups?token=<%= token %>"><i class="bi bi-people"></i> Groups</a></li>
 
+    <!-- Billing -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Billing</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'trial-codes' ? 'active' : '' %>" href="<%= basePath %>/admin/trial-codes?token=<%= token %>"><i class="bi bi-ticket-perforated"></i> Trial Codes</a></li>
+
+    <!-- Account -->
+    <div class="nav-divider"></div>
+    <div class="nav-section">Account</div>
+    <li class="nav-item"><a class="nav-link <%= active === 'account' ? 'active' : '' %>" href="<%= basePath %>/admin/account?token=<%= token %>"><i class="bi bi-shield-check"></i> Account Settings</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'my-subscription' ? 'active' : '' %>" href="<%= basePath %>/admin/my-subscription?token=<%= token %>"><i class="bi bi-person-badge"></i> My Subscription</a></li>
+    <li class="nav-item"><a class="nav-link <%= active === 'pricing' ? 'active' : '' %>" href="<%= basePath %>/admin/pricing?token=<%= token %>"><i class="bi bi-tags"></i> Pricing Plans</a></li>
+
     <!-- System -->
     <div class="nav-divider"></div>
     <div class="nav-section">System</div>

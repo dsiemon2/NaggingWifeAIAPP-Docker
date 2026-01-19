@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .sidebar { min-height: 100vh; }
+    .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidebar .nav-link i { margin-right: 0.5rem; }
+    .nav-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 0.5rem 0; }
+    .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; padding: 0.5rem 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { active: 'account', branding, token, basePath: _basePath }) %>
+
+      <main class="col-md-10 ms-sm-auto px-4 py-3">
+        <h2 class="mb-4"><i class="bi bi-shield-check"></i> Account Settings</h2>
+
+        <div class="row">
+          <!-- Profile Information -->
+          <div class="col-lg-6">
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Profile Information</h5>
+              </div>
+              <div class="card-body">
+                <form id="profileForm">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">First Name</label>
+                      <input type="text" class="form-control" name="firstName" value="<%= user?.firstName || '' %>">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Last Name</label>
+                      <input type="text" class="form-control" name="lastName" value="<%= user?.lastName || '' %>">
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" value="<%= user?.email || '' %>">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" class="form-control" name="phone" value="<%= user?.phone || '' %>">
+                  </div>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Save Changes
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div class="col-lg-6">
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-key"></i> Change Password</h5>
+              </div>
+              <div class="card-body">
+                <form id="passwordForm">
+                  <div class="mb-3">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" class="form-control" name="currentPassword" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">New Password</label>
+                    <input type="password" class="form-control" name="newPassword" required minlength="8">
+                    <div class="form-text">Minimum 8 characters</div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" class="form-control" name="confirmPassword" required>
+                  </div>
+                  <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-shield-lock"></i> Change Password
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Info -->
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Account Information</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <p class="mb-1 text-muted">Role</p>
+                <p class="fw-bold"><%= user?.role || 'N/A' %></p>
+              </div>
+              <div class="col-md-4">
+                <p class="mb-1 text-muted">Account Created</p>
+                <p class="fw-bold"><%= user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A' %></p>
+              </div>
+              <div class="col-md-4">
+                <p class="mb-1 text-muted">Last Login</p>
+                <p class="fw-bold"><%= user?.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never' %></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= _basePath %>';
+    const token = '<%= token %>';
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      try {
+        const res = await fetch(`${basePath}/admin/account/update?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert('Profile updated successfully');
+        } else {
+          alert(result.error || 'Failed to update profile');
+        }
+      } catch (err) {
+        alert('Error updating profile');
+      }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      if (data.newPassword !== data.confirmPassword) {
+        alert('New passwords do not match');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${basePath}/admin/account/change-password?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: data.currentPassword,
+            newPassword: data.newPassword
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert('Password changed successfully');
+          e.target.reset();
+        } else {
+          alert(result.error || 'Failed to change password');
+        }
+      } catch (err) {
+        alert('Error changing password');
+      }
+    });
+  </script>
+</body>
+</html>

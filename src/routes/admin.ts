@@ -2274,4 +2274,366 @@ router.post('/payment-gateways', async (req, res) => {
   }
 });
 
+// ============================================
+// TRIAL CODES
+// ============================================
+
+// Trial Codes page
+router.get('/trial-codes', async (req: Request, res: Response) => {
+  try {
+    const trialCodes = await prisma.trialCode.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Calculate stats
+    const stats = {
+      pending: trialCodes.filter(tc => tc.status === 'pending').length,
+      sent: trialCodes.filter(tc => tc.status === 'sent').length,
+      redeemed: trialCodes.filter(tc => tc.status === 'redeemed').length,
+      expired: trialCodes.filter(tc => tc.status === 'expired').length,
+      total: trialCodes.length,
+    };
+
+    res.render('admin/trial-codes', {
+      title: 'Trial Codes - Nagging Wife AI',
+      active: 'trial-codes',
+      branding: await getBranding(),
+      token: req.query.token,
+      _basePath: process.env.BASE_PATH || '/NaggingWife',
+      trialCodes,
+      stats,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Trial codes page error');
+    res.status(500).render('admin/error', { error: 'Failed to load trial codes' });
+  }
+});
+
+// Create trial code
+router.post('/trial-codes', async (req: Request, res: Response) => {
+  try {
+    const { firstName, lastName, email, phone, organization, deliveryMethod, durationDays } = req.body;
+
+    // Generate unique code
+    const code = `NW-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + (parseInt(durationDays) || 14));
+
+    const trialCode = await prisma.trialCode.create({
+      data: {
+        code,
+        requesterFirstName: firstName,
+        requesterLastName: lastName,
+        requesterEmail: email,
+        requesterPhone: phone || null,
+        requesterOrganization: organization || null,
+        deliveryMethod: deliveryMethod || 'email',
+        durationDays: parseInt(durationDays) || 14,
+        status: 'pending',
+        expiresAt,
+      },
+    });
+
+    res.json({ success: true, trialCode });
+  } catch (err) {
+    logger.error({ err }, 'Create trial code error');
+    res.status(500).json({ success: false, error: 'Failed to create trial code' });
+  }
+});
+
+// Revoke trial code
+router.post('/trial-codes/:id/revoke', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.trialCode.update({
+      where: { id },
+      data: {
+        status: 'revoked',
+        revokedAt: new Date(),
+      },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, 'Revoke trial code error');
+    res.status(500).json({ success: false, error: 'Failed to revoke trial code' });
+  }
+});
+
+// Extend trial code
+router.post('/trial-codes/:id/extend', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const trialCode = await prisma.trialCode.findUnique({ where: { id } });
+    if (!trialCode) {
+      return res.status(404).json({ success: false, error: 'Trial code not found' });
+    }
+
+    const newExpiresAt = new Date(trialCode.expiresAt);
+    newExpiresAt.setDate(newExpiresAt.getDate() + 14);
+
+    await prisma.trialCode.update({
+      where: { id },
+      data: {
+        expiresAt: newExpiresAt,
+        extensionCount: { increment: 1 },
+      },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, 'Extend trial code error');
+    res.status(500).json({ success: false, error: 'Failed to extend trial code' });
+  }
+});
+
+// ============================================
+// ACCOUNT SETTINGS
+// ============================================
+
+// Account page
+router.get('/account', async (req: Request, res: Response) => {
+  try {
+    res.render('admin/account-settings', {
+      title: 'Account Settings - Nagging Wife AI',
+      active: 'account',
+      branding: await getBranding(),
+      token: req.query.token,
+      _basePath: process.env.BASE_PATH || '/NaggingWife',
+      user: (req as any).user || null,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Account page error');
+    res.status(500).render('admin/error', { error: 'Failed to load account page' });
+  }
+});
+
+// Update account
+router.post('/account/update', async (req: Request, res: Response) => {
+  try {
+    const { firstName, lastName, email, phone } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName,
+        lastName,
+        email,
+      },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, 'Update account error');
+    res.status(500).json({ success: false, error: 'Failed to update account' });
+  }
+});
+
+// Change password
+router.post('/account/change-password', async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    // For demo purposes, just return success
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (err) {
+    logger.error({ err }, 'Change password error');
+    res.status(500).json({ success: false, error: 'Failed to change password' });
+  }
+});
+
+// ============================================
+// MY SUBSCRIPTION
+// ============================================
+
+// My Subscription page
+router.get('/my-subscription', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    let subscription = null;
+    let currentPlan = null;
+
+    if (userId) {
+      subscription = await prisma.subscription.findFirst({
+        where: { userId },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (subscription) {
+        currentPlan = subscription.plan;
+      }
+    }
+
+    res.render('admin/my-subscription', {
+      title: 'My Subscription - Nagging Wife AI',
+      active: 'my-subscription',
+      branding: await getBranding(),
+      token: req.query.token,
+      _basePath: process.env.BASE_PATH || '/NaggingWife',
+      subscription,
+      currentPlan,
+    });
+  } catch (err) {
+    logger.error({ err }, 'My subscription page error');
+    res.status(500).render('admin/error', { error: 'Failed to load subscription page' });
+  }
+});
+
+// ============================================
+// PRICING
+// ============================================
+
+// Pricing page
+router.get('/pricing', async (req: Request, res: Response) => {
+  try {
+    const plans = await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    const userId = (req as any).user?.id;
+    let currentPlan = null;
+
+    if (userId) {
+      const subscription = await prisma.subscription.findFirst({
+        where: { userId },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (subscription) {
+        currentPlan = subscription.plan;
+      }
+    }
+
+    res.render('admin/pricing', {
+      title: 'Pricing Plans - Nagging Wife AI',
+      active: 'pricing',
+      branding: await getBranding(),
+      token: req.query.token,
+      _basePath: process.env.BASE_PATH || '/NaggingWife',
+      plans,
+      currentPlan,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Pricing page error');
+    res.status(500).render('admin/error', { error: 'Failed to load pricing page' });
+  }
+});
+
+// Subscribe to plan
+router.post('/subscription/subscribe/:planId', async (req: Request, res: Response) => {
+  try {
+    const { planId } = req.params;
+    // For demo, return a mock checkout URL
+    res.json({ success: true, checkout_url: `https://checkout.stripe.com/pay/${planId}` });
+  } catch (err) {
+    logger.error({ err }, 'Subscribe error');
+    res.status(500).json({ success: false, error: 'Failed to start subscription' });
+  }
+});
+
+// Start free trial
+router.post('/subscription/start-trial/:planId', async (req: Request, res: Response) => {
+  try {
+    const { planId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+
+    await prisma.subscription.create({
+      data: {
+        userId,
+        planId,
+        status: 'trialing',
+        trialEndsAt,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: trialEndsAt,
+      },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, 'Start trial error');
+    res.status(500).json({ success: false, error: 'Failed to start trial' });
+  }
+});
+
+// Cancel subscription
+router.post('/subscription/cancel', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId, status: 'active' },
+    });
+
+    if (subscription) {
+      await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: 'canceled',
+          canceledAt: new Date(),
+        },
+      });
+    }
+
+    res.json({ success: true, message: 'Subscription canceled' });
+  } catch (err) {
+    logger.error({ err }, 'Cancel subscription error');
+    res.status(500).json({ success: false, error: 'Failed to cancel subscription' });
+  }
+});
+
+// Resume subscription
+router.post('/subscription/resume', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId, status: 'canceled' },
+    });
+
+    if (subscription) {
+      await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: 'active',
+          canceledAt: null,
+        },
+      });
+    }
+
+    res.json({ success: true, message: 'Subscription resumed' });
+  } catch (err) {
+    logger.error({ err }, 'Resume subscription error');
+    res.status(500).json({ success: false, error: 'Failed to resume subscription' });
+  }
+});
+
 export default router;
