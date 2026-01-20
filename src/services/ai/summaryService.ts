@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { config } from '../../config/index.js';
+import { logger } from '../../utils/logger';
 import { FamilyTaskSummary, SatisfactionRating } from '../../types/index.js';
 
 const openai = new OpenAI({
@@ -147,7 +148,7 @@ Please analyze this reminder session and respond in the following JSON format:
       taskSummary: analysis.taskSummary || createDefaultTaskSummary(),
     };
   } catch (error) {
-    console.error('Error generating reminder summary:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Error generating reminder summary:');
     throw error;
   }
 }
@@ -200,7 +201,7 @@ Provide brief insights in this JSON format:
 
     return JSON.parse(content);
   } catch (error) {
-    console.error('Error generating quick insights:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Error generating quick insights:');
     return { suggestions: [], urgentItems: [], encouragements: [] };
   }
 }
@@ -267,7 +268,7 @@ Respond in JSON format:
 
     return JSON.parse(content);
   } catch (error) {
-    console.error('Error comparing family progress:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Error comparing family progress:');
     throw error;
   }
 }

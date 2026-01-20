@@ -92,7 +92,7 @@ router.post('/register', async (req, res: Response) => {
 
     // TODO: Send verification email with token
     // In production, this would send an actual email
-    console.log(`Verification token for ${email}: ${emailVerificationToken}`);
+    logger.info({ email, token: emailVerificationToken }, 'Verification token generated');
 
     res.status(201).json({
       success: true,
@@ -108,7 +108,7 @@ router.post('/register', async (req, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Registration error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Registration error:');
     res.status(500).json({ success: false, error: 'Registration failed' });
   }
 });
@@ -180,7 +180,7 @@ router.post('/login', async (req, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Login error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Login error:');
     res.status(500).json({ success: false, error: 'Login failed' });
   }
 });
@@ -231,7 +231,7 @@ router.post('/super-admin/login', async (req, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Super admin login error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Super admin login error:');
     res.status(500).json({ success: false, error: 'Login failed' });
   }
 });
@@ -262,7 +262,7 @@ router.get('/me', authenticateUser, async (req: AuthenticatedRequest, res: Respo
       },
     });
   } catch (error) {
-    console.error('Get me error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get me error:');
     res.status(500).json({ success: false, error: 'Failed to get user info' });
   }
 });
@@ -295,7 +295,7 @@ router.post('/verify-email', async (req, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Email verification error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Email verification error:');
     res.status(500).json({ success: false, error: 'Email verification failed' });
   }
 });
@@ -319,7 +319,7 @@ router.get('/verify-email/:token', async (req, res: Response) => {
     // Redirect to frontend with success
     res.redirect('/auth/verify-email?status=success');
   } catch (error) {
-    console.error('Email verification error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Email verification error:');
     res.redirect('/auth/verify-email?status=error&message=Verification+failed');
   }
 });
@@ -338,7 +338,7 @@ router.post('/forgot-password', async (req, res: Response) => {
     if (result) {
       // TODO: Send password reset email with token
       // In production, this would send an actual email
-      console.log(`Password reset token for ${email}: ${result.passwordResetToken}`);
+      logger.info({ email, token: result.passwordResetToken }, 'Password reset token generated');
     }
 
     res.json({
@@ -352,7 +352,7 @@ router.post('/forgot-password', async (req, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Forgot password error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Forgot password error:');
     res.status(500).json({ success: false, error: 'Password reset request failed' });
   }
 });
@@ -385,7 +385,7 @@ router.post('/reset-password', async (req, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Reset password error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Reset password error:');
     res.status(500).json({ success: false, error: 'Password reset failed' });
   }
 });
@@ -424,7 +424,7 @@ router.get('/check-username/:username', async (req, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Check username error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Check username error:');
     res.status(500).json({ success: false, error: 'Failed to check username' });
   }
 });
@@ -463,7 +463,7 @@ router.get('/check-email/:email', async (req, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Check email error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Check email error:');
     res.status(500).json({ success: false, error: 'Failed to check email' });
   }
 });
@@ -556,7 +556,7 @@ router.put('/account/name', authenticateUser, async (req: AuthenticatedRequest, 
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Update name error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update name error:');
     res.status(500).json({ success: false, error: 'Failed to update name' });
   }
 });
@@ -608,7 +608,7 @@ router.put('/account/email', authenticateUser, async (req: AuthenticatedRequest,
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Update email error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update email error:');
     res.status(500).json({ success: false, error: 'Failed to update email' });
   }
 });
@@ -638,7 +638,7 @@ router.put('/account/phone', authenticateUser, async (req: AuthenticatedRequest,
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Update phone error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update phone error:');
     res.status(500).json({ success: false, error: 'Failed to update phone' });
   }
 });
@@ -682,7 +682,7 @@ router.put('/account/password', authenticateUser, async (req: AuthenticatedReque
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Update password error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update password error:');
     res.status(500).json({ success: false, error: 'Failed to update password' });
   }
 });
@@ -705,7 +705,7 @@ router.get('/account/payment-methods', authenticateUser, async (req: Authenticat
 
     res.json({ success: true, data: { paymentMethods } });
   } catch (error) {
-    console.error('Get payment methods error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get payment methods error:');
     res.status(500).json({ success: false, error: 'Failed to get payment methods' });
   }
 });
@@ -757,7 +757,7 @@ router.post('/account/payment-methods', authenticateUser, async (req: Authentica
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Add payment method error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Add payment method error:');
     res.status(500).json({ success: false, error: 'Failed to add payment method' });
   }
 });
@@ -799,7 +799,7 @@ router.put('/account/payment-methods/:id/default', authenticateUser, async (req:
 
     res.json({ success: true, data: { paymentMethod: updated } });
   } catch (error) {
-    console.error('Set default payment method error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Set default payment method error:');
     res.status(500).json({ success: false, error: 'Failed to set default payment method' });
   }
 });
@@ -845,7 +845,7 @@ router.delete('/account/payment-methods/:id', authenticateUser, async (req: Auth
 
     res.json({ success: true, message: 'Payment method removed' });
   } catch (error) {
-    console.error('Delete payment method error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete payment method error:');
     res.status(500).json({ success: false, error: 'Failed to remove payment method' });
   }
 });
@@ -878,7 +878,7 @@ router.put('/account/notifications', authenticateUser, async (req: Authenticated
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Update notifications error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update notifications error:');
     res.status(500).json({ success: false, error: 'Failed to update notification preferences' });
   }
 });
@@ -910,7 +910,7 @@ router.delete('/account/devices/:id', authenticateUser, async (req: Authenticate
 
     res.json({ success: true, message: 'Device removed' });
   } catch (error) {
-    console.error('Delete device error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete device error:');
     res.status(500).json({ success: false, error: 'Failed to remove device' });
   }
 });
@@ -939,7 +939,7 @@ router.delete('/account/devices', authenticateUser, async (req: AuthenticatedReq
 
     res.json({ success: true, message: 'Signed out of all other devices' });
   } catch (error) {
-    console.error('Delete all devices error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete all devices error:');
     res.status(500).json({ success: false, error: 'Failed to sign out of devices' });
   }
 });

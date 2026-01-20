@@ -3,6 +3,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile as GoogleProfile, VerifyCallback as GoogleVerifyCallback } from 'passport-google-oauth20';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import * as userService from '../services/userService.js';
+import { logger } from '../utils/logger';
 import { generateUserToken } from '../middleware/auth.js';
 import { prisma } from '../db/prisma.js';
 import { config } from '../config/index.js';
@@ -175,7 +176,7 @@ router.get(
   (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('google', { session: false }, async (err: Error | null, user: unknown) => {
       if (err) {
-        console.error('Google OAuth error:', err);
+        logger.error({ error: err instanceof Error ? err.message : String(err) }, 'Google OAuth error:');
         return res.redirect(`/auth/login?error=${encodeURIComponent(err.message)}`);
       }
 
@@ -239,7 +240,7 @@ router.get(
 
           return res.redirect(`${redirectUrl}?token=${token}`);
         } catch (createError) {
-          console.error('Error creating OAuth user:', createError);
+          logger.error({ error: createError instanceof Error ? createError.message : String(createError) }, 'Error creating OAuth user:');
           return res.redirect('/auth/login?error=Failed+to+create+account');
         }
       }
@@ -317,7 +318,7 @@ router.get(
   (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('microsoft', { session: false }, async (err: Error | null, user: unknown) => {
       if (err) {
-        console.error('Microsoft OAuth error:', err);
+        logger.error({ error: err instanceof Error ? err.message : String(err) }, 'Microsoft OAuth error:');
         return res.redirect(`/auth/login?error=${encodeURIComponent(err.message)}`);
       }
 
@@ -380,7 +381,7 @@ router.get(
 
           return res.redirect(`${redirectUrl}?token=${token}`);
         } catch (createError) {
-          console.error('Error creating OAuth user:', createError);
+          logger.error({ error: createError instanceof Error ? createError.message : String(createError) }, 'Error creating OAuth user:');
           return res.redirect('/auth/login?error=Failed+to+create+account');
         }
       }

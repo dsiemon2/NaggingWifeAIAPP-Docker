@@ -60,7 +60,7 @@ router.get('/groups', async (req: AuthenticatedRequest, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('List groups error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'List groups error:');
     res.status(500).json({ success: false, error: 'Failed to list groups' });
   }
 });
@@ -111,7 +111,7 @@ router.post('/groups', async (req: AuthenticatedRequest, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Create group error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Create group error:');
     res.status(500).json({ success: false, error: 'Failed to create group' });
   }
 });
@@ -139,7 +139,7 @@ router.get('/groups/:id', async (req: AuthenticatedRequest, res: Response) => {
 
     res.json({ success: true, data: group });
   } catch (error) {
-    console.error('Get group error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Get group error:');
     res.status(500).json({ success: false, error: 'Failed to get group' });
   }
 });
@@ -175,7 +175,7 @@ router.put('/groups/:id', async (req: AuthenticatedRequest, res: Response) => {
       res.status(400).json({ success: false, error: 'Invalid input', details: error.errors });
       return;
     }
-    console.error('Update group error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Update group error:');
     res.status(500).json({ success: false, error: 'Failed to update group' });
   }
 });
@@ -192,7 +192,7 @@ router.delete('/groups/:id', async (req: AuthenticatedRequest, res: Response) =>
 
     res.json({ success: true, message: 'Group deleted' });
   } catch (error) {
-    console.error('Delete group error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error) }, 'Delete group error:');
     res.status(500).json({ success: false, error: 'Failed to delete group' });
   }
 });
