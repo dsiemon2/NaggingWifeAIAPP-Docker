@@ -5,6 +5,7 @@ import { authenticateUser } from '../middleware/auth.js';
 import { requireGroupAdmin } from '../middleware/rbac.js';
 import { tenantIsolation, getGroupId } from '../middleware/tenant.js';
 import { AuthenticatedRequest, Role } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

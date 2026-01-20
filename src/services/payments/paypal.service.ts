@@ -2,8 +2,8 @@
 // PayPal Payment Service
 // ===========================================
 
-import { prisma } from '../../db/prisma';
-import logger from '../../utils/logger';
+import { prisma } from '../../db/prisma.js';
+import logger from '../../utils/logger.js';
 
 interface PayPalAccessToken {
   access_token: string;

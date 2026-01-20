@@ -4,8 +4,8 @@
 // ===========================================
 
 import { APIContracts, APIControllers, Constants } from 'authorizenet';
-import { prisma } from '../../db/prisma';
-import logger from '../../utils/logger';
+import { prisma } from '../../db/prisma.js';
+import logger from '../../utils/logger.js';
 
 // Get Authorize.net configuration from database
 async function getAuthorizeConfig() {

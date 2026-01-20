@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../db/prisma.js';
 import pino from 'pino';
 import multer from 'multer';
+import { logger } from '../utils/logger.js';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import jwt from 'jsonwebtoken';
@@ -13,7 +14,6 @@ import { Role, JwtPayload, isAdult } from '../types/index.js';
 import * as userService from '../services/userService.js';
 
 const router = Router();
-const logger = pino();
 
 // Base path for URL prefixes (Docker deployment)
 const basePath = process.env.BASE_PATH || '/NaggingWife';
@@ -2429,9 +2429,9 @@ router.post('/account/update', async (req: Request, res: Response) => {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        firstName,
-        lastName,
+        name: `${firstName} ${lastName}`.trim(),
         email,
+        phone: phone || undefined,
       },
     });
 

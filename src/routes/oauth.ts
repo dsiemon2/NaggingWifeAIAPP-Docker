@@ -3,7 +3,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile as GoogleProfile, VerifyCallback as GoogleVerifyCallback } from 'passport-google-oauth20';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import * as userService from '../services/userService.js';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 import { generateUserToken } from '../middleware/auth.js';
 import { prisma } from '../db/prisma.js';
 import { config } from '../config/index.js';

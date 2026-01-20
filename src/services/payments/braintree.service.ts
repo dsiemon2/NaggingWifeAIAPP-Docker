@@ -4,8 +4,8 @@
 // ===========================================
 
 import braintree from 'braintree';
-import { prisma } from '../../db/prisma';
-import logger from '../../utils/logger';
+import { prisma } from '../../db/prisma.js';
+import logger from '../../utils/logger.js';
 
 // Get Braintree configuration from database
 async function getBraintreeConfig() {

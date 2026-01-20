@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import pino from 'pino';
 import http from 'http';
 import cookieParser from 'cookie-parser';
+import { logger } from './utils/logger.js';
 
 // API Routes
 import authRouter from './routes/auth.js';
@@ -14,7 +15,6 @@ import healthRouter from './routes/health.js';
 import passport from 'passport';
 
 const app = express();
-const logger = pino();
 
 app.use(cors({
   origin: true,

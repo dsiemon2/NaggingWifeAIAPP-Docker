@@ -3,8 +3,8 @@
 // ===========================================
 
 import { Client, Environment } from 'square';
-import { prisma } from '../../db/prisma';
-import logger from '../../utils/logger';
+import { prisma } from '../../db/prisma.js';
+import logger from '../../utils/logger.js';
 import { randomUUID } from 'crypto';
 
 // Get Square configuration from database

@@ -5,6 +5,7 @@ import * as userService from '../services/userService.js';
 import { generateUserToken, generateSuperAdminToken, authenticateUser } from '../middleware/auth.js';
 import { AuthenticatedRequest } from '../types/index.js';
 import { prisma } from '../db/prisma.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 

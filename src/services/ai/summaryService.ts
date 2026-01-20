@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { config } from '../../config/index.js';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 import { FamilyTaskSummary, SatisfactionRating } from '../../types/index.js';
 
 const openai = new OpenAI({

@@ -3,8 +3,8 @@
 // Coordinates between Stripe, PayPal, Square, Braintree, and Authorize.net
 // ===========================================
 
-import { prisma } from '../../db/prisma';
-import logger from '../../utils/logger';
+import { prisma } from '../../db/prisma.js';
+import logger from '../../utils/logger.js';
 import * as stripeService from './stripe.service';
 import * as paypalService from './paypal.service';
 import * as squareService from './square.service';

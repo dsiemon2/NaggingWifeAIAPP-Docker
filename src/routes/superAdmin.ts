@@ -4,6 +4,7 @@ import { prisma } from '../db/prisma.js';
 import { authenticateSuperAdmin } from '../middleware/auth.js';
 import { AuthenticatedRequest } from '../types/index.js';
 import bcrypt from 'bcrypt';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
