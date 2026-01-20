@@ -2397,13 +2397,18 @@ router.post('/trial-codes/:id/extend', async (req: Request, res: Response) => {
 // Account page
 router.get('/account', async (req: Request, res: Response) => {
   try {
-    res.render('admin/account-settings', {
+    const branding = await getBranding();
+    const basePath = process.env.BASE_PATH || '/NaggingWife';
+    res.render('admin/account', {
       title: 'Account Settings - Nagging Wife AI',
       active: 'account',
-      branding: await getBranding(),
+      branding,
       token: req.query.token,
-      _basePath: process.env.BASE_PATH || '/NaggingWife',
+      basePath,
+      _basePath: basePath,
       user: (req as any).user || null,
+      userName: (req as any).user?.name || 'Admin',
+      userEmail: (req as any).user?.email || '',
     });
   } catch (err) {
     logger.error({ err }, 'Account page error');

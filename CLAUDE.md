@@ -1,5 +1,14 @@
 # NaggingWife AI - Claude Code Conventions
 
+**Type:** Fun/Entertainment AI Platform
+**Port:** 8089
+**URL Prefix:** /NaggingWife/
+**Status:** Active (Development)
+**Live URL:** https://www.naggingwifeai.com
+**Last Updated:** 2026-01-19
+
+---
+
 ## Project Overview
 - **Port:** 8089
 - **URL Prefix:** /NaggingWife/
@@ -176,6 +185,46 @@ All menu items are visible to all authenticated users:
 
 8. **System**
    - Settings, Features
+
+## Logging
+
+Pino-based logging with pretty printing in development:
+
+```
+src/utils/logger.ts
+```
+
+### Features
+- **Pino Logger**: Fast, low-overhead JSON logging
+- **Pretty Printing**: Colorized output in development with pino-pretty
+- **Log Levels**: Configurable via LOG_LEVEL environment variable
+- **Timestamps**: Human-readable timestamps in development
+- **Production Mode**: Raw JSON output for log aggregation
+
+### Log Levels
+- `fatal` - Critical errors
+- `error` - Error conditions
+- `warn` - Warning conditions
+- `info` - Informational messages (default)
+- `debug` - Debug information
+- `trace` - Trace-level logging
+
+### Usage
+```typescript
+import logger from '../utils/logger';
+
+logger.info('Server started on port 8089');
+logger.error({ error: err.message }, 'Database connection failed');
+logger.debug({ userId, action }, 'User action logged');
+```
+
+### Configuration
+```bash
+# Environment variable
+LOG_LEVEL=debug  # Set log level (default: info)
+```
+
+---
 
 ## Docker Commands
 ```bash

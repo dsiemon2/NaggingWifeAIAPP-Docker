@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Settings - Nagging Wife AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <script>window.APP_BASE_PATH = '<%= basePath || "/NaggingWife" %>';</script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('_sidebar', { token, active: 'account', branding, _basePath: basePath || '/NaggingWife' }) %>
+      <main class="col-md-10 ms-sm-auto p-4" style="background: #f8f9fa; min-height: 100vh;">
+        <h2 class="mb-4"><i class="bi bi-shield-check me-2" style="color: #9333ea;"></i>Account Settings</h2>
+        <div class="card mb-4">
+          <div class="card-header"><h5 class="mb-0"><i class="bi bi-person me-2"></i>Personal Information</h5></div>
+          <div class="card-body">
+            <div class="row mb-3"><div class="col-sm-3 text-muted">Name</div><div class="col-sm-7" id="displayName"><%= userName || 'Not set' %></div><div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-primary" onclick="showEditModal('name')"><i class="bi bi-pencil"></i></button></div></div>
+            <hr>
+            <div class="row mb-3"><div class="col-sm-3 text-muted">Email</div><div class="col-sm-7" id="displayEmail"><%= userEmail || 'Not set' %></div><div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-primary" onclick="showEditModal('email')"><i class="bi bi-pencil"></i></button></div></div>
+            <hr>
+            <div class="row"><div class="col-sm-3 text-muted">Phone</div><div class="col-sm-7" id="displayPhone"><%= user?.phone || 'Not set' %></div><div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-primary" onclick="showEditModal('phone')"><i class="bi bi-pencil"></i></button></div></div>
+          </div>
+        </div>
+        <div class="card mb-4">
+          <div class="card-header"><h5 class="mb-0"><i class="bi bi-key me-2"></i>Password</h5></div>
+          <div class="card-body">
+            <div class="row"><div class="col-sm-3 text-muted">Password</div><div class="col-sm-7 text-muted">Last changed: Never</div><div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-warning" onclick="showEditModal('password')"><i class="bi bi-key"></i> Change</button></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Two-Factor Authentication</h5></div>
+          <div class="card-body">
+            <div class="row"><div class="col-sm-3 text-muted">Status</div><div class="col-sm-7"><span class="badge bg-secondary">Not Enabled</span></div><div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-success"><i class="bi bi-shield-plus"></i> Enable</button></div></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title" id="editModalTitle">Edit</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body" id="editModalBody"></div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" style="background: #9333ea; border-color: #9333ea;" onclick="saveEdit()">Save</button></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const token = '<%= token %>';
+    const basePath = window.APP_BASE_PATH;
+    let editModal, currentEditField = '';
+    document.addEventListener('DOMContentLoaded', () => { editModal = new bootstrap.Modal(document.getElementById('editModal')); });
+    function showEditModal(field) {
+      currentEditField = field;
+      const title = document.getElementById('editModalTitle');
+      const body = document.getElementById('editModalBody');
+      const templates = {
+        name: { title: 'Edit Name', body: '<div class="mb-3"><label class="form-label">Name</label><input type="text" class="form-control" id="editValue"></div>' },
+        email: { title: 'Change Email', body: '<div class="mb-3"><label class="form-label">New Email</label><input type="email" class="form-control" id="editValue"></div><div class="mb-3"><label class="form-label">Password</label><input type="password" class="form-control" id="editPassword"></div>' },
+        phone: { title: 'Edit Phone', body: '<div class="mb-3"><label class="form-label">Phone</label><input type="tel" class="form-control" id="editValue"></div>' },
+        password: { title: 'Change Password', body: '<div class="mb-3"><label class="form-label">Current Password</label><input type="password" class="form-control" id="currentPassword"></div><div class="mb-3"><label class="form-label">New Password</label><input type="password" class="form-control" id="newPassword"></div><div class="mb-3"><label class="form-label">Confirm</label><input type="password" class="form-control" id="confirmPassword"></div>' }
+      };
+      title.textContent = templates[field].title;
+      body.innerHTML = templates[field].body;
+      editModal.show();
+    }
+    async function saveEdit() {
+      let endpoint = `${basePath}/admin/api/account/${currentEditField}?token=${token}`;
+      let body = {};
+      if (currentEditField === 'name') body = { name: document.getElementById('editValue').value };
+      else if (currentEditField === 'email') body = { email: document.getElementById('editValue').value, password: document.getElementById('editPassword').value };
+      else if (currentEditField === 'phone') body = { phone: document.getElementById('editValue').value };
+      else if (currentEditField === 'password') {
+        const newPass = document.getElementById('newPassword').value;
+        if (newPass !== document.getElementById('confirmPassword').value) { alert('Passwords do not match'); return; }
+        body = { currentPassword: document.getElementById('currentPassword').value, newPassword: newPass };
+      }
+      const res = await fetch(endpoint, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (data.success) { editModal.hide(); location.reload(); } else alert('Error: ' + (data.error || 'Failed'));
+    }
+  </script>
+</body>
+</html>
